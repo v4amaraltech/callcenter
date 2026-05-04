@@ -4,11 +4,11 @@ set -e
 echo "→ Puxando atualizações..."
 git pull origin main
 
-echo "→ Instalando dependências..."
-npm install --omit=dev
+echo "→ Build da imagem Docker..."
+docker build -t callcenter-backend:latest .
 
-echo "→ Reiniciando servidor..."
-pm2 restart callcenter-backend || pm2 start ecosystem.config.cjs --env production
+echo "→ Deploy no Swarm..."
+docker stack deploy -c docker-compose.yml callcenter --with-registry-auth
 
 echo "✓ Deploy concluído"
-pm2 status
+docker service ls | grep callcenter
