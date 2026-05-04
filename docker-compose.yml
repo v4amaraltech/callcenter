@@ -3,7 +3,6 @@ version: '3.8'
 services:
   backend:
     image: ghcr.io/kaiquenascimentov4/callcenter:latest
-    env_file: .env
     networks:
       - portainer
     deploy:
