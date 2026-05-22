@@ -11,36 +11,37 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 -- NextAuth.js v5 — tabelas de sessão/auth (substitui auth.users do Supabase)
 -- =============================================================================
 
+-- Colunas em camelCase (com aspas) — exigido pelo @auth/pg-adapter
 CREATE TABLE IF NOT EXISTS users (
-  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name          text,
-  email         text UNIQUE NOT NULL,
-  email_verified timestamptz,
-  image         text,
-  created_at    timestamptz DEFAULT now()
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name            text,
+  email           text UNIQUE NOT NULL,
+  "emailVerified" timestamptz,
+  image           text,
+  created_at      timestamptz DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS accounts (
-  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id             uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  type                text NOT NULL,
-  provider            text NOT NULL,
-  provider_account_id text NOT NULL,
-  refresh_token       text,
-  access_token        text,
-  expires_at          bigint,
-  token_type          text,
-  scope               text,
-  id_token            text,
-  session_state       text,
-  UNIQUE(provider, provider_account_id)
+  id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "userId"              uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type                  text NOT NULL,
+  provider              text NOT NULL,
+  "providerAccountId"   text NOT NULL,
+  refresh_token         text,
+  access_token          text,
+  expires_at            bigint,
+  token_type            text,
+  scope                 text,
+  id_token              text,
+  session_state         text,
+  UNIQUE(provider, "providerAccountId")
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
-  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_token text UNIQUE NOT NULL,
-  user_id       uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  expires       timestamptz NOT NULL
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "sessionToken" text UNIQUE NOT NULL,
+  "userId"       uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires        timestamptz NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS verification_tokens (
