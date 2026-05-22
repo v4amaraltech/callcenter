@@ -5,28 +5,49 @@ export default auth((request) => {
   const session = request.auth;
   const { pathname } = request.nextUrl;
 
-  const isLoginPage    = pathname.startsWith("/login");
-  const isAuthRoute    = pathname.startsWith("/api/auth");
-  const isPendingPage  = pathname.startsWith("/pending");
+  const isLoginPage   = pathname.startsWith("/login");
+  const isAuthRoute   = pathname.startsWith("/api/auth");
+  const isPendingPage = pathname.startsWith("/pending");
 
-  if (!session && !isLoginPage && !isAuthRoute) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  const user = session?.user as
+    | { id?: string; email?: string; approved?: boolean }
+    | undefined;
+
+  const hasSession = Boolean(user?.email);
+  const approved = user?.approved;
+
+  // Sem sessão → login
+  if (!hasSession) {
+    if (!isLoginPage && !isAuthRoute) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    return NextResponse.next();
   }
 
-  if (session && isLoginPage) {
+  // Sessão incompleta (cookie antigo / token sem approved) → login, não pending
+  if (!user?.id || approved === undefined) {
+    if (!isLoginPage && !isAuthRoute) {
+      return NextResponse.redirect(
+        new URL("/login?error=SessionExpired", request.url)
+      );
+    }
+    return NextResponse.next();
+  }
+
+  // Login: só redireciona se aprovação estiver definida
+  if (isLoginPage) {
+    return NextResponse.redirect(
+      new URL(approved ? "/" : "/pending", request.url)
+    );
+  }
+
+  // Conta criada, aguardando aprovação do admin
+  if (approved === false && !isPendingPage && !isAuthRoute) {
+    return NextResponse.redirect(new URL("/pending", request.url));
+  }
+
+  if (approved === true && isPendingPage) {
     return NextResponse.redirect(new URL("/", request.url));
-  }
-
-  if (session && !isLoginPage && !isAuthRoute) {
-    const approved = (session.user as { approved?: boolean })?.approved;
-
-    if (!approved && !isPendingPage) {
-      return NextResponse.redirect(new URL("/pending", request.url));
-    }
-
-    if (approved && isPendingPage) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
   }
 
   return NextResponse.next();

@@ -69,9 +69,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
 
     async session({ session, token }) {
-      session.user.id       = token.userId as string;
-      session.user.approved = token.approved as boolean;
-      session.user.admin    = token.admin    as boolean;
+      if (token.userId) {
+        session.user.id = token.userId as string;
+      }
+      if (typeof token.approved === "boolean") {
+        session.user.approved = token.approved;
+      }
+      if (typeof token.admin === "boolean") {
+        session.user.admin = token.admin;
+      }
       return session;
     },
   },
