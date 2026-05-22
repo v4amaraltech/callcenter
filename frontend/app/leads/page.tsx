@@ -262,7 +262,7 @@ export default function LeadsPage() {
         <StatCard variant="orange" label="Sem agente" value={visibleStats.unassigned} hint="Prontos para distribuição" icon={Plus} />
       </section>
 
-      <Card className="border-border bg-card shadow-[var(--shadow-xs)]">
+      <Card className="bg-card">
         <CardContent className="flex flex-col gap-4 p-5 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-1 flex-wrap items-center gap-3">
             <Input
@@ -346,7 +346,7 @@ export default function LeadsPage() {
       ) : null}
 
       {rows.length > 0 ? (
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-xs)]">
+        <div className="overflow-hidden rounded-lg bg-card card-elevated">
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-muted/40">
               <tr>
@@ -388,7 +388,7 @@ export default function LeadsPage() {
                     <td className="px-4 py-3 text-muted-foreground">{lead.telefone}</td>
                     <td className="px-4 py-3 text-muted-foreground">{lead.agents?.nome ?? "—"}</td>
                     <td className="px-4 py-3">
-                      <Badge variant="outline" className={statusBadge(lead.status)}>
+                      <Badge variant="secondary" className={statusBadge(lead.status)}>
                         {STATUS_LABELS[lead.status]}
                       </Badge>
                     </td>
@@ -632,7 +632,7 @@ export default function LeadsPage() {
                   </span>
                 ))}
                 <span className="font-medium text-foreground">Status</span>
-                <Badge variant="outline" className={statusBadge(detail.status)}>
+                <Badge variant="secondary" className={statusBadge(detail.status)}>
                   {STATUS_LABELS[detail.status]}
                 </Badge>
               </div>
@@ -674,7 +674,7 @@ export default function LeadsPage() {
                   {detail.historico_ligacoes?.map((result) => (
                     <div key={result.id} className="space-y-1 rounded-lg border border-border bg-card px-3 py-2">
                       <div className="flex gap-2">
-                        <Badge variant="outline" className={interesseBadge(result.interesse)}>
+                        <Badge variant="secondary" className={interesseBadge(result.interesse)}>
                           {result.interesse}
                         </Badge>
                         <span className="text-xs text-muted-foreground">{new Date(result.criado_em).toLocaleDateString("pt-BR")}</span>

@@ -108,18 +108,11 @@ export default function CampaignsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.06, duration: 0.35 }}
           >
-            <Card className="h-full border-border bg-card shadow-[var(--shadow-xs)] transition-colors hover:border-primary/30">
+            <Card className="h-full bg-card transition-shadow hover:shadow-md">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-3">
-                  <CardTitle className="text-base text-foreground">{campaign.nome}</CardTitle>
-                  <Badge
-                    variant="outline"
-                    className={
-                      campaign.ativo
-                        ? "shrink-0 border-green-500/30 bg-green-500/10 text-green-500"
-                        : "shrink-0 border-border text-muted-foreground"
-                    }
-                  >
+                  <CardTitle className="text-lg font-semibold">{campaign.nome}</CardTitle>
+                  <Badge variant={campaign.ativo ? "success" : "secondary"} className="shrink-0">
                     {campaign.ativo ? "Ativa" : "Inativa"}
                   </Badge>
                 </div>

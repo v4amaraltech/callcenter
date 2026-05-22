@@ -90,17 +90,17 @@ function DashboardContent() {
       {/* Welcome heading */}
       <section className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
         <div className="space-y-1">
-          <h1 className="text-[32px] font-bold tracking-tight text-foreground lg:text-[36px]">
-            {firstName ? `Bem-vindo, ${firstName}! 👋` : "Bem-vindo! 👋"}
+          <h1 className="text-2xl font-semibold leading-none tracking-tight text-foreground lg:text-3xl">
+            {firstName ? `Bem-vindo, ${firstName}!` : "Bem-vindo!"}
           </h1>
-          <p className="text-[15px] text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {agentId === "all"
               ? "Acompanhe o desempenho do time de agentes em tempo real."
               : `Visão centrada no agente: ${selectedAgent?.nome ?? "selecionado"}.`}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Contexto</span>
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Contexto</span>
           <Select value={agentId} onValueChange={(value) => setAgent(value ?? "all")}>
             <SelectTrigger className="w-[260px]">
               <SelectValue placeholder="Todos os agentes" />
@@ -127,7 +127,7 @@ function DashboardContent() {
 
       {/* Quick access */}
       <section>
-        <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-muted-foreground">
           Acesso rápido
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -135,7 +135,7 @@ function DashboardContent() {
             <Link
               key={href}
               href={href}
-              className="group flex items-center gap-4 rounded-xl border border-border bg-card px-4 py-3.5 shadow-[var(--shadow-xs)] transition hover:border-primary/30 hover:shadow-[var(--shadow-sm)]"
+              className="group flex items-center gap-4 rounded-lg px-4 py-3.5 card-elevated transition-shadow hover:shadow-md"
             >
               <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg", iconBg)}>
                 <Icon className="h-[18px] w-[18px]" />
@@ -153,7 +153,7 @@ function DashboardContent() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base text-foreground">Evolução diária</CardTitle>
+            <CardTitle className="text-lg font-semibold text-foreground">Evolução diária</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
@@ -173,7 +173,7 @@ function DashboardContent() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base text-foreground">
+            <CardTitle className="text-lg font-semibold text-foreground">
               {agentId === "all" ? "Ranking por agente" : "Volume do agente selecionado"}
             </CardTitle>
           </CardHeader>
@@ -201,32 +201,32 @@ function DashboardContent() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base text-foreground">Ligações recentes</CardTitle>
+          <CardTitle className="text-lg font-semibold text-foreground">Ligações recentes</CardTitle>
         </CardHeader>
         <CardContent className="pt-1">
-          <div className="overflow-hidden rounded-xl border border-border">
+          <div className="overflow-hidden rounded-lg card-elevated">
             <table className="min-w-full text-sm">
               <thead className="bg-muted/40">
-                <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-3 font-semibold">Lead</th>
-                  <th className="px-4 py-3 font-semibold">Agente</th>
-                  <th className="px-4 py-3 font-semibold">Interesse</th>
-                  <th className="px-4 py-3 font-semibold">Próxima ação</th>
-                  <th className="px-4 py-3 font-semibold">Data</th>
+                <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                  <th className="px-4 py-3 font-medium">Lead</th>
+                  <th className="px-4 py-3 font-medium">Agente</th>
+                  <th className="px-4 py-3 font-medium">Interesse</th>
+                  <th className="px-4 py-3 font-medium">Próxima ação</th>
+                  <th className="px-4 py-3 font-medium">Data</th>
                 </tr>
               </thead>
               <tbody>
                 {recent?.data?.map((result) => (
-                  <tr key={result.id} className="border-b border-border/70 last:border-b-0 hover:bg-muted/20">
-                    <td className="px-4 py-3 text-foreground">{result.leads?.nome ?? result.lead_id}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{result.agents?.nome ?? "—"}</td>
+                  <tr key={result.id} className="border-b border-border/70 last:border-b-0 transition-colors hover:bg-muted/50">
+                    <td className="px-4 py-3 text-sm text-foreground">{result.leads?.nome ?? result.lead_id}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{result.agents?.nome ?? "—"}</td>
                     <td className="px-4 py-3">
-                      <Badge variant="outline" className={interesseBadge(result.interesse)}>
+                      <Badge variant="secondary" className={interesseBadge(result.interesse)}>
                         {result.interesse}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{proximo(result.proxima_acao)}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{new Date(result.criado_em).toLocaleDateString("pt-BR")}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{proximo(result.proxima_acao)}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{new Date(result.criado_em).toLocaleDateString("pt-BR")}</td>
                   </tr>
                 ))}
                 {!recent?.data?.length ? (
@@ -247,7 +247,7 @@ function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div className="page-shell"><div className="h-96 animate-pulse rounded-xl border border-border bg-card" /></div>}>
+    <Suspense fallback={<div className="page-shell"><div className="h-96 animate-pulse rounded-lg card-elevated bg-card" /></div>}>
       <DashboardContent />
     </Suspense>
   );

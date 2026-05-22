@@ -113,13 +113,13 @@ export default function ResultsPage() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
-        className="overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-xs)]"
+        className="overflow-hidden rounded-lg bg-card card-elevated"
       >
         <table className="w-full text-sm">
           <thead className="border-b border-border bg-muted/40">
             <tr>
               {["Lead", "Agente", "Interesse", "Humor", "Próxima ação", "Resumo", "Data", ""].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <th key={h} className="h-12 px-4 text-left align-middle text-xs font-medium text-muted-foreground">
                   {h}
                 </th>
               ))}
@@ -140,16 +140,16 @@ export default function ResultsPage() {
               </tr>
             ) : (
               data?.data?.map((r) => (
-                <tr key={r.id} className="border-b border-border last:border-0 hover:bg-accent transition-colors">
-                  <td className="px-4 py-3 font-medium text-foreground">{r.leads?.nome ?? r.lead_id ?? "—"}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{r.agents?.nome ?? "—"}</td>
+                <tr key={r.id} className="border-b border-border last:border-0 transition-colors hover:bg-muted/50">
+                  <td className="p-4 font-medium text-foreground">{r.leads?.nome ?? r.lead_id ?? "—"}</td>
+                  <td className="p-4 text-sm text-muted-foreground">{r.agents?.nome ?? "—"}</td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={interesseBadge(r.interesse)}>
+                    <Badge variant="secondary" className={interesseBadge(r.interesse)}>
                       {r.interesse}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={humorBadge(r.humor)}>
+                    <Badge variant="secondary" className={humorBadge(r.humor)}>
                       {r.humor}
                     </Badge>
                   </td>
@@ -191,7 +191,7 @@ export default function ResultsPage() {
                   {
                     label: "Interesse",
                     badge: (
-                      <Badge variant="outline" className={interesseBadge(selected.interesse)}>
+                      <Badge variant="secondary" className={interesseBadge(selected.interesse)}>
                         {selected.interesse}
                       </Badge>
                     ),
@@ -199,7 +199,7 @@ export default function ResultsPage() {
                   {
                     label: "Humor",
                     badge: (
-                      <Badge variant="outline" className={humorBadge(selected.humor)}>
+                      <Badge variant="secondary" className={humorBadge(selected.humor)}>
                         {selected.humor}
                       </Badge>
                     ),

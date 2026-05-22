@@ -38,7 +38,7 @@ export default function ConfigPage() {
   });
 
   if (isLoading) {
-    return <div className="page-shell"><div className="h-96 animate-pulse rounded-xl border border-border bg-card" /></div>;
+    return <div className="page-shell"><div className="h-96 animate-pulse rounded-lg card-elevated bg-card" /></div>;
   }
 
   return (
@@ -110,7 +110,7 @@ export default function ConfigPage() {
                         </Select>
                       </div>
 
-                      <div className="rounded-xl border border-border bg-muted/30 p-3 md:col-span-2">
+                      <div className="rounded-lg border border-border bg-muted/30 p-3 md:col-span-2">
                         <div className="flex items-center justify-between gap-4">
                           <div>
                             <p className="font-medium text-foreground">Agente fala primeiro</p>

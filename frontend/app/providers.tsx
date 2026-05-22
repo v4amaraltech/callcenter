@@ -4,6 +4,7 @@ import { ThemeProvider, useTheme } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { SessionProvider } from "next-auth/react";
 import { useState } from "react";
+import { SidebarProvider } from "@/components/sidebar";
 
 function ThemedToaster() {
   const { resolvedTheme } = useTheme();
@@ -24,10 +25,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange={false}>
-        <QueryClientProvider client={queryClient}>
-          {children}
-          <ThemedToaster />
-        </QueryClientProvider>
+        <SidebarProvider>
+          <QueryClientProvider client={queryClient}>
+            {children}
+            <ThemedToaster />
+          </QueryClientProvider>
+        </SidebarProvider>
       </ThemeProvider>
     </SessionProvider>
   );

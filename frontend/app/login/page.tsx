@@ -24,7 +24,7 @@ function LoginContent() {
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-sm px-8 py-10 rounded-xl bg-card border border-border shadow-[var(--shadow-sm)]"
+        className="relative z-10 w-full max-w-sm px-8 py-10 rounded-lg bg-card card-elevated"
       >
         <div className="flex flex-col items-center mb-10">
           <div className="flex items-center gap-2 mb-2">

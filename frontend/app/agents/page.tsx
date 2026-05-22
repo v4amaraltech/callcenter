@@ -106,7 +106,7 @@ export default function AgentsPage() {
           <CardHeader className="gap-4 border-b border-border/70 pb-5">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <CardTitle className="text-lg text-foreground">Gestão de agentes</CardTitle>
+                <CardTitle className="text-lg font-semibold">Gestão de agentes</CardTitle>
                 <p className="text-sm text-muted-foreground">Busque, filtre e abra a configuração completa de cada agente.</p>
               </div>
               <div className="flex flex-1 flex-wrap items-center gap-3 xl:justify-end">
@@ -153,18 +153,18 @@ export default function AgentsPage() {
                 />
               </div>
             ) : (
-              <div className="overflow-hidden rounded-xl border border-border">
+              <div className="overflow-hidden rounded-lg card-elevated">
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead className="bg-muted/40">
-                      <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        <th className="px-4 py-3">Agente</th>
-                        <th className="px-4 py-3">Empresa</th>
-                        <th className="px-4 py-3">Voz</th>
-                        <th className="px-4 py-3">Modelo</th>
-                        <th className="px-4 py-3">Status</th>
-                        <th className="px-4 py-3">Performance</th>
-                        <th className="px-4 py-3 text-right">Ações</th>
+                      <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                        <th className="h-12 px-4 font-medium">Agente</th>
+                        <th className="h-12 px-4 font-medium">Empresa</th>
+                        <th className="h-12 px-4 font-medium">Voz</th>
+                        <th className="h-12 px-4 font-medium">Modelo</th>
+                        <th className="h-12 px-4 font-medium">Status</th>
+                        <th className="h-12 px-4 font-medium">Performance</th>
+                        <th className="h-12 px-4 font-medium text-right">Ações</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -177,7 +177,7 @@ export default function AgentsPage() {
                         ? `${publicBase}/hooks/inbound/${agent.webhook_entrada_token}`
                         : "";
                       return (
-                        <tr key={agent.id} className="border-t border-border/70 align-top hover:bg-muted/20">
+                        <tr key={agent.id} className="border-t border-border align-top transition-colors hover:bg-muted/50">
                           <td className="px-4 py-3">
                             <div className="flex items-start gap-3">
                               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-sm font-semibold text-primary">
@@ -192,12 +192,12 @@ export default function AgentsPage() {
                           <td className="px-4 py-3 text-muted-foreground">{agent.empresa_nome ?? "—"}</td>
                           <td className="px-4 py-3 text-muted-foreground">{agent.voz ?? "—"}</td>
                           <td className="px-4 py-3">
-                            <span className="inline-flex rounded-xl border border-border bg-muted/40 px-3 py-1 text-xs text-foreground">
+                            <span className="inline-flex rounded-md border border-border bg-muted/40 px-3 py-1 text-xs text-foreground">
                               {agent.modelo_gemini ?? "—"}
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <Badge variant="outline" className={agent.ativo ? "border-green-500/40 text-green-500" : "border-border text-muted-foreground"}>
+                            <Badge variant={agent.ativo ? "success" : "secondary"}>
                               {agent.ativo ? "Ativo" : "Inativo"}
                             </Badge>
                           </td>
@@ -244,7 +244,7 @@ export default function AgentsPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base text-foreground">Boas práticas</CardTitle>
+              <CardTitle className="text-lg font-semibold">Boas práticas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm leading-6 text-muted-foreground">
               <p>Configure prompts curtos, contexto útil e webhooks claros para manter a qualidade operacional alta.</p>
@@ -254,7 +254,7 @@ export default function AgentsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base text-foreground">Atalhos</CardTitle>
+              <CardTitle className="text-lg font-semibold">Atalhos</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Link href="/agents/new" className={buttonVariants({ variant: "outline", className: "w-full justify-between" })}>Criar novo agente <Plus className="h-4 w-4" /></Link>
