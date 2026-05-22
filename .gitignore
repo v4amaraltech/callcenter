@@ -6,6 +6,13 @@ frontend/node_modules/
 .env
 .env.local
 frontend/.env.local
+vps_env_update*.sh
+*_lf.sh
+test_*.js
+test_*.sh
+approve_*.sql
+fix_deploy_lf.sh
+redeploy_unix.sh
 
 # Banco SQLite local (substituído pelo Supabase)
 data.db

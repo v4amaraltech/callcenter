@@ -60,18 +60,18 @@ DB_USER=postgres
 DB_PASSWORD=SENHA_FORTE_AQUI
 
 # Twilio
-TWILIO_ACCOUNT_SID=REDACTED_TWILIO_ACCOUNT_SID
-TWILIO_AUTH_TOKEN=REDACTED_TWILIO_AUTH_TOKEN
-TWILIO_PHONE_NUMBER=+5511REDACTED_PHONE
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_AUTH_TOKEN=seu_twilio_auth_token
+TWILIO_PHONE_NUMBER=+5511xxxxxxxx
 
-# Gemini
-GEMINI_API_KEY=REDACTED_GEMINI_API_KEY
+# Gemini (Google AI — gere em https://aistudio.google.com/apikey)
+GEMINI_API_KEY=AIzaSUA_CHAVE_AQUI
 GEMINI_MODEL=gemini-2.0-flash-live-001
 GEMINI_VOICE=Kore
 
 # Empresa
 EMPRESA_NOME=V4 Company
-N8N_WEBHOOK_URL=https://webhook-n8n.v4companyamaral.com/webhook/REDACTED_N8N_WEBHOOK_ID
+N8N_WEBHOOK_URL=https://seu-n8n.exemplo.com/webhook/seu-id
 
 # NextAuth
 NEXTAUTH_SECRET=$(openssl rand -base64 32)
