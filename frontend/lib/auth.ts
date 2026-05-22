@@ -27,34 +27,41 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   callbacks: {
     async signIn({ user }) {
+      // Verificar domínio — adapter ainda não criou o usuário aqui
       if (!user.email?.endsWith("@v4company.com")) return false;
-
-      // Garantir registro em user_approvals (substitui o trigger do Supabase)
-      await pool.query(
-        `INSERT INTO user_approvals (user_id, email)
-         SELECT id, email FROM users WHERE email = $1
-         ON CONFLICT (user_id) DO NOTHING`,
-        [user.email]
-      );
-
       return true;
     },
 
     async jwt({ token, user }) {
       if (user) {
+        // Primeiro login: adapter acabou de criar o usuário no DB
         token.userId = user.id;
+
+        // Criar registro em user_approvals (não aprovado por padrão)
+        try {
+          await pool.query(
+            `INSERT INTO user_approvals (user_id, email)
+             VALUES ($1, $2)
+             ON CONFLICT (user_id) DO NOTHING`,
+            [user.id, user.email]
+          );
+        } catch { /* ignora conflito */ }
+
+        // Buscar status de aprovação
+        try {
+          const res = await pool.query(
+            "SELECT approved, admin FROM user_approvals WHERE user_id = $1",
+            [user.id]
+          );
+          token.approved = res.rows[0]?.approved ?? false;
+          token.admin    = res.rows[0]?.admin    ?? false;
+        } catch {
+          token.approved = false;
+          token.admin    = false;
+        }
       }
 
-      // Sempre re-checar aprovação do banco para refletir mudanças do admin
-      if (token.userId) {
-        const res = await pool.query(
-          "SELECT approved, admin FROM user_approvals WHERE user_id = $1",
-          [token.userId]
-        );
-        token.approved = res.rows[0]?.approved ?? false;
-        token.admin    = res.rows[0]?.admin    ?? false;
-      }
-
+      // Sem user (requests subsequentes / middleware Edge): retorna token como está
       return token;
     },
 

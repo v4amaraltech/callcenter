@@ -33,7 +33,7 @@ services:
       NODE_ENV:         production
 
       # Banco de dados
-      DB_HOST:          postgres
+      DB_HOST:          callcenter_postgres
       DB_PORT:          5432
       DB_NAME:          ${DB_NAME:-callcenter}
       DB_USER:          ${DB_USER:-postgres}
@@ -80,7 +80,7 @@ services:
       NODE_ENV:           production
       PORT:               3000
       HOSTNAME:           "0.0.0.0"
-      DATABASE_URL:       postgresql://${DB_USER:-postgres}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-callcenter}
+      DATABASE_URL:       postgresql://${DB_USER:-postgres}:${DB_PASSWORD}@callcenter_postgres:5432/${DB_NAME:-callcenter}
 
       # NextAuth
       NEXTAUTH_URL:       https://call.v4companyamaral.com
