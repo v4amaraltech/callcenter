@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { getSupabase } from "@/lib/supabase";
+import { apiBase } from "@/lib/api";
 import { Bot, CheckCircle2, ChevronRight, ExternalLink, Loader2, PhoneCall, PlayCircle, Save, Sparkles, Volume2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -268,10 +268,13 @@ function AgentEditorShell({ agentId, initialAgent }: { agentId?: string; initial
   async function generateWithAi() {
     setAiGenerating(true);
     try {
-      const { data: json, error } = await getSupabase().functions.invoke("generate-agent-script", {
-        body: aiState,
+      const resp = await fetch(`${apiBase}/api/generate-agent-script`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(aiState),
       });
-      if (error) throw new Error(error.message || "Falha ao gerar script com IA");
+      if (!resp.ok) throw new Error("Falha ao gerar script com IA");
+      const json = await resp.json();
 
       const empresa_contexto =
         json?.empresa_contexto && typeof json.empresa_contexto === "object" ? json.empresa_contexto : {};

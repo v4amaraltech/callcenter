@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { agentsApi, resultsApi, statsApi } from "@/lib/api";
-import { getSupabase } from "@/lib/supabase";
+import { useSession } from "next-auth/react";
 import { StatCard } from "@/components/app/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,15 +28,12 @@ function DashboardContent() {
   const agentId = searchParams.get("agent") ?? "all";
   const [firstName, setFirstName] = useState<string>("");
 
+  const { data: session } = useSession();
+
   useEffect(() => {
-    async function loadUser() {
-      const { data: { user } } = await getSupabase().auth.getUser();
-      if (!user) return;
-      const name = user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split("@")[0] ?? "";
-      setFirstName(name.split(" ")[0]);
-    }
-    void loadUser();
-  }, []);
+    const name = session?.user?.name ?? session?.user?.email?.split("@")[0] ?? "";
+    setFirstName(name.split(" ")[0]);
+  }, [session]);
 
   const { data: agents = [] } = useQuery({
     queryKey: ["agents", "dashboard"],

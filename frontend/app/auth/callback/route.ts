@@ -1,23 +1,8 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextResponse } from "next/server";
 
+// O callback OAuth é tratado automaticamente pelo NextAuth em /api/auth/callback/google
+// Este arquivo existe apenas para compatibilidade com links antigos.
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
-
-  if (code) {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (!error && data.user) {
-      const email = data.user.email ?? "";
-      if (!email.endsWith("@v4company.com")) {
-        await supabase.auth.signOut();
-        return NextResponse.redirect(`${origin}/login?error=unauthorized_domain`);
-      }
-      return NextResponse.redirect(`${origin}/`);
-    }
-  }
-
-  return NextResponse.redirect(`${origin}/login?error=auth_failed`);
+  const { origin } = new URL(request.url);
+  return NextResponse.redirect(`${origin}/`);
 }

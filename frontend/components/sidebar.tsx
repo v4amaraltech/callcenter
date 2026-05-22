@@ -20,7 +20,7 @@ import {
   Sun,
   Users,
 } from "lucide-react";
-import { getSupabase } from "@/lib/supabase";
+import { signOut, useSession } from "next-auth/react";
 import { adminApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -55,36 +55,25 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
+  const { data: session } = useSession();
   const [collapsed, setCollapsed] = useState(
     () => typeof window !== "undefined" && localStorage.getItem("sidebar-collapsed") === "true",
   );
   const [signingOut, setSigningOut] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [user, setUser] = useState<{ name?: string; email?: string; avatar?: string } | null>(null);
+
+  const user = session?.user
+    ? {
+        name:   session.user.name ?? session.user.email?.split("@")[0],
+        email:  session.user.email ?? undefined,
+        avatar: session.user.image ?? undefined,
+      }
+    : null;
 
   useEffect(() => {
-    async function load() {
-      const {
-        data: { user: supaUser },
-      } = await getSupabase().auth.getUser();
-      if (!supaUser) return;
-
-      setUser({
-        name: supaUser.user_metadata?.full_name ?? supaUser.user_metadata?.name ?? supaUser.email?.split("@")[0],
-        email: supaUser.email,
-        avatar: supaUser.user_metadata?.avatar_url ?? supaUser.user_metadata?.picture,
-      });
-
-      try {
-        const users = await adminApi.listUsers();
-        setIsAdmin(Boolean(users.find((entry) => entry.user_id === supaUser.id)?.admin));
-      } catch {
-        setIsAdmin(false);
-      }
-    }
-
-    void load();
-  }, []);
+    const sessionUser = session?.user as { id?: string; admin?: boolean } | undefined;
+    setIsAdmin(Boolean(sessionUser?.admin));
+  }, [session]);
 
   const allGroups = useMemo<NavGroup[]>(() => {
     if (!isAdmin) return baseGroups;
@@ -97,10 +86,9 @@ export function Sidebar() {
   const hidden = pathname.startsWith("/login") || pathname.startsWith("/auth") || pathname.startsWith("/pending");
   if (hidden) return null;
 
-  async function signOut() {
+  async function handleSignOut() {
     setSigningOut(true);
-    await getSupabase().auth.signOut();
-    router.push("/login");
+    await signOut({ callbackUrl: "/login" });
   }
 
   const initials =
@@ -226,7 +214,7 @@ export function Sidebar() {
             {!collapsed ? (
               <button
                 type="button"
-                onClick={() => void signOut()}
+                onClick={() => void handleSignOut()}
                 disabled={signingOut}
                 className="rounded-lg border border-sidebar-border bg-background/60 p-2 text-muted-foreground transition hover:text-foreground disabled:opacity-50"
               >
@@ -237,7 +225,7 @@ export function Sidebar() {
           {collapsed ? (
             <button
               type="button"
-              onClick={() => void signOut()}
+              onClick={() => void handleSignOut()}
               disabled={signingOut}
               className="mt-3 flex w-full items-center justify-center rounded-lg border border-sidebar-border bg-background/60 p-2 text-muted-foreground transition hover:text-foreground disabled:opacity-50"
             >

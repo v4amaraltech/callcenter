@@ -1,68 +1,51 @@
-import { supabase } from "./supabase.js";
+import { query, queryOne, execute } from "./pg.js";
 import { getLatestLeadByPhone } from "./leads.js";
 
 export async function saveCallResult({
-  callSid,
-  leadId,
-  agentId,
-  confirmado,
-  pessoa_correta,
-  interesse,
-  humor,
-  resumo,
-  proxima_acao,
+  callSid, leadId, agentId,
+  confirmado, pessoa_correta, interesse, humor,
+  resumo, proxima_acao,
 }) {
-  const { data: transcripts } = await supabase
-    .from("transcripts")
-    .select("role, texto")
-    .eq("call_sid", callSid ?? "")
-    .order("ts");
+  const transcripts = await query(
+    "SELECT role, texto FROM transcripts WHERE call_sid = $1 ORDER BY ts",
+    [callSid ?? ""]
+  );
 
-  const transcricao_usuario = (transcripts ?? []).filter((r) => r.role === "user").map((r) => r.texto).join(" ");
-  const transcricao_agente = (transcripts ?? []).filter((r) => r.role === "agent").map((r) => r.texto).join(" ");
+  const transcricao_usuario = transcripts.filter(r => r.role === "user").map(r => r.texto).join(" ");
+  const transcricao_agente  = transcripts.filter(r => r.role === "agent").map(r => r.texto).join(" ");
 
-  const { data, error } = await supabase
-    .from("call_results")
-    .insert({
-      call_sid: callSid ?? null,
-      lead_id: leadId ?? null,
-      agent_id: agentId ?? null,
-      confirmado,
-      pessoa_correta,
-      interesse,
-      humor,
-      resumo,
-      proxima_acao,
-      transcricao_usuario,
-      transcricao_agente,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
+  const result = await queryOne(
+    `INSERT INTO call_results
+       (call_sid, lead_id, agent_id, confirmado, pessoa_correta, interesse, humor,
+        resumo, proxima_acao, transcricao_usuario, transcricao_agente)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+     RETURNING *`,
+    [callSid ?? null, leadId ?? null, agentId ?? null,
+     confirmado, pessoa_correta, interesse, humor,
+     resumo, proxima_acao, transcricao_usuario, transcricao_agente]
+  );
 
   if (leadId) {
-    const novoStatus =
-      proxima_acao === "nao_contatar"
-        ? "nao_contatar"
-        : interesse === "alto"
-          ? "convertido"
-          : "contactado";
-    await supabase
-      .from("leads")
-      .update({ status: novoStatus, ultima_ligacao_em: new Date().toISOString() })
-      .eq("id", leadId);
+    const novoStatus = proxima_acao === "nao_contatar"
+      ? "nao_contatar"
+      : interesse === "alto" ? "convertido" : "contactado";
+    await execute(
+      "UPDATE leads SET status = $1, ultima_ligacao_em = now() WHERE id = $2",
+      [novoStatus, leadId]
+    );
   }
 
-  return data;
+  return result;
 }
 
 export async function appendTranscript(callSid, role, texto) {
   if (!callSid || !texto?.trim()) return;
-  await supabase.from("transcripts").insert({ call_sid: callSid, role, texto: texto.trim() });
+  await execute(
+    "INSERT INTO transcripts (call_sid, role, texto) VALUES ($1, $2, $3)",
+    [callSid, role, texto.trim()]
+  );
 }
 
-/** Junta linhas consecutivas do mesmo papel num único “bubble”. */
 export function mergeTranscriptsToBubbles(rows) {
   const sorted = [...(rows ?? [])].sort((a, b) => new Date(a.ts) - new Date(b.ts));
   const bubbles = [];
@@ -72,87 +55,98 @@ export function mergeTranscriptsToBubbles(rows) {
       last.texto = `${last.texto} ${row.texto}`.trim();
       last.ts_end = row.ts;
     } else {
-      bubbles.push({
-        role: row.role,
-        texto: row.texto,
-        ts: row.ts,
-        ts_end: row.ts,
-      });
+      bubbles.push({ role: row.role, texto: row.texto, ts: row.ts, ts_end: row.ts });
     }
   }
   return bubbles;
 }
 
 export async function getTranscriptsByCallSid(callSid) {
-  const { data } = await supabase.from("transcripts").select("*").eq("call_sid", callSid).order("ts");
-  return data ?? [];
+  return query("SELECT * FROM transcripts WHERE call_sid = $1 ORDER BY ts", [callSid]);
 }
 
 export async function getTranscriptsConversation(callSid) {
-  const rows = await getTranscriptsByCallSid(callSid);
-  return { raw: rows, bubbles: mergeTranscriptsToBubbles(rows) };
+  const raw = await getTranscriptsByCallSid(callSid);
+  return { raw, bubbles: mergeTranscriptsToBubbles(raw) };
 }
 
 function buildTranscriptSummary(bubbles) {
   return (bubbles ?? [])
-    .map((item) => `${item.role === "agent" ? "Agente" : "Cliente"}: ${item.texto}`)
+    .map(item => `${item.role === "agent" ? "Agente" : "Cliente"}: ${item.texto}`)
     .join("\n");
 }
 
 export async function listCallResults({
-  page = 1,
-  limit = 50,
-  lead_id,
-  agent_id,
-  interesse,
-  humor,
-  proxima_acao,
-  from: dateFrom,
-  to: dateTo,
+  page = 1, limit = 50,
+  lead_id, agent_id, interesse, humor, proxima_acao,
+  from: dateFrom, to: dateTo,
 } = {}) {
-  let query = supabase
-    .from("call_results")
-    .select("id, call_sid, lead_id, agent_id, interesse, humor, resumo, proxima_acao, criado_em, leads(nome, empresa, telefone), agents(nome)", { count: "exact" });
+  const conditions = [];
+  const params = [];
 
-  if (lead_id) query = query.eq("lead_id", lead_id);
-  if (agent_id) query = query.eq("agent_id", agent_id);
-  if (interesse) query = query.eq("interesse", interesse);
-  if (humor) query = query.eq("humor", humor);
-  if (proxima_acao) query = query.eq("proxima_acao", proxima_acao);
-  if (dateFrom) query = query.gte("criado_em", dateFrom);
-  if (dateTo) query = query.lte("criado_em", dateTo);
+  if (lead_id)     { params.push(lead_id);     conditions.push(`cr.lead_id = $${params.length}`); }
+  if (agent_id)    { params.push(agent_id);    conditions.push(`cr.agent_id = $${params.length}`); }
+  if (interesse)   { params.push(interesse);   conditions.push(`cr.interesse = $${params.length}`); }
+  if (humor)       { params.push(humor);       conditions.push(`cr.humor = $${params.length}`); }
+  if (proxima_acao){ params.push(proxima_acao);conditions.push(`cr.proxima_acao = $${params.length}`); }
+  if (dateFrom)    { params.push(dateFrom);    conditions.push(`cr.criado_em >= $${params.length}`); }
+  if (dateTo)      { params.push(dateTo);      conditions.push(`cr.criado_em <= $${params.length}`); }
 
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
   const offset = (page - 1) * limit;
-  query = query.order("criado_em", { ascending: false }).range(offset, offset + limit - 1);
+  params.push(limit, offset);
 
-  const { data, count, error } = await query;
-  if (error) throw error;
-  return { data, count, page, limit };
+  const rows = await query(
+    `SELECT cr.id, cr.call_sid, cr.lead_id, cr.agent_id, cr.interesse, cr.humor,
+            cr.resumo, cr.proxima_acao, cr.criado_em,
+            json_build_object('nome', l.nome, 'empresa', l.empresa, 'telefone', l.telefone) AS leads,
+            json_build_object('nome', a.nome) AS agents
+     FROM call_results cr
+     LEFT JOIN leads l ON l.id = cr.lead_id
+     LEFT JOIN agents a ON a.id = cr.agent_id
+     ${where}
+     ORDER BY cr.criado_em DESC
+     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params
+  );
+
+  const countParams = params.slice(0, params.length - 2);
+  const countRes = await queryOne(
+    `SELECT COUNT(*) AS total FROM call_results cr ${where}`,
+    countParams
+  );
+
+  return { data: rows, count: parseInt(countRes?.total ?? "0"), page, limit };
 }
 
 export async function getCallResultById(id) {
-  const { data } = await supabase
-    .from("call_results")
-    .select("*, leads(nome, empresa, telefone), agents(nome, webhook_entrada_token)")
-    .eq("id", id)
-    .single();
-  return data;
+  return queryOne(
+    `SELECT cr.*,
+            json_build_object('nome', l.nome, 'empresa', l.empresa, 'telefone', l.telefone) AS leads,
+            json_build_object('nome', a.nome, 'webhook_entrada_token', a.webhook_entrada_token) AS agents
+     FROM call_results cr
+     LEFT JOIN leads l ON l.id = cr.lead_id
+     LEFT JOIN agents a ON a.id = cr.agent_id
+     WHERE cr.id = $1`,
+    [id]
+  );
 }
 
 export async function getLatestResultByPhone(phone) {
   const lead = await getLatestLeadByPhone(phone);
   if (!lead) return null;
-
-  const { data, error } = await supabase
-    .from("call_results")
-    .select("*, leads(nome, empresa, telefone, ultima_ligacao_em), agents(nome, webhook_entrada_token)")
-    .eq("lead_id", lead.id)
-    .order("criado_em", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data ?? null;
+  return queryOne(
+    `SELECT cr.*,
+            json_build_object('nome', l.nome, 'empresa', l.empresa, 'telefone', l.telefone, 'ultima_ligacao_em', l.ultima_ligacao_em) AS leads,
+            json_build_object('nome', a.nome, 'webhook_entrada_token', a.webhook_entrada_token) AS agents
+     FROM call_results cr
+     LEFT JOIN leads l ON l.id = cr.lead_id
+     LEFT JOIN agents a ON a.id = cr.agent_id
+     WHERE cr.lead_id = $1
+     ORDER BY cr.criado_em DESC
+     LIMIT 1`,
+    [lead.id]
+  );
 }
 
 export async function getLatestConversationByPhone(phone) {
@@ -167,64 +161,72 @@ export async function getLatestConversationByPhone(phone) {
 }
 
 export async function getStatsSummary({ agent_id } = {}) {
-  let q = supabase.from("call_results").select("interesse, humor, criado_em, agent_id");
-  if (agent_id) q = q.eq("agent_id", agent_id);
+  const conditions = agent_id ? ["agent_id = $1"] : [];
+  const params = agent_id ? [agent_id] : [];
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
-  const { data: results } = await q;
+  const results = await query(
+    `SELECT interesse, humor, criado_em, agent_id FROM call_results ${where}`,
+    params
+  );
 
-  const hoje = new Date().toISOString().slice(0, 10);
-  const total = results?.length ?? 0;
-  const hoje_count = results?.filter((r) => r.criado_em?.slice(0, 10) === hoje).length ?? 0;
-  const alto_interesse = results?.filter((r) => r.interesse === "alto").length ?? 0;
-  const convertidos = results?.filter((r) => r.interesse === "alto" || r.interesse === "medio").length ?? 0;
+  const hoje  = new Date().toISOString().slice(0, 10);
+  const total = results.length;
+  const hoje_count    = results.filter(r => r.criado_em?.toISOString?.().slice(0,10) === hoje || String(r.criado_em).slice(0,10) === hoje).length;
+  const alto_interesse = results.filter(r => r.interesse === "alto").length;
+  const convertidos   = results.filter(r => r.interesse === "alto" || r.interesse === "medio").length;
 
   return {
-    total_ligacoes: total,
-    ligacoes_hoje: hoje_count,
+    total_ligacoes:      total,
+    ligacoes_hoje:       hoje_count,
     taxa_interesse_alto: total ? Math.round((alto_interesse / total) * 100) : 0,
-    taxa_conversao: total ? Math.round((convertidos / total) * 100) : 0,
+    taxa_conversao:      total ? Math.round((convertidos / total) * 100) : 0,
   };
 }
 
 export async function getStatsByDate({ from: dateFrom, to: dateTo, agent_id } = {}) {
-  let query = supabase.from("call_results").select("criado_em, interesse, agent_id");
-  if (dateFrom) query = query.gte("criado_em", dateFrom);
-  if (dateTo) query = query.lte("criado_em", dateTo);
-  if (agent_id) query = query.eq("agent_id", agent_id);
+  const conditions = [];
+  const params = [];
+  if (dateFrom)  { params.push(dateFrom);  conditions.push(`criado_em >= $${params.length}`); }
+  if (dateTo)    { params.push(dateTo);    conditions.push(`criado_em <= $${params.length}`); }
+  if (agent_id)  { params.push(agent_id); conditions.push(`agent_id = $${params.length}`); }
 
-  const { data } = await query.order("criado_em");
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const rows = await query(`SELECT criado_em, interesse, agent_id FROM call_results ${where} ORDER BY criado_em`, params);
 
   const byDay = {};
-  for (const r of data ?? []) {
-    const day = r.criado_em?.slice(0, 10);
+  for (const r of rows) {
+    const day = String(r.criado_em).slice(0, 10);
     if (!day) continue;
     if (!byDay[day]) byDay[day] = { date: day, total: 0, alto: 0 };
     byDay[day].total++;
     if (r.interesse === "alto") byDay[day].alto++;
   }
-
   return Object.values(byDay);
 }
 
 export async function getStatsByAgent({ from: dateFrom, to: dateTo } = {}) {
-  let query = supabase.from("call_results").select("agent_id, interesse, criado_em");
-  if (dateFrom) query = query.gte("criado_em", dateFrom);
-  if (dateTo) query = query.lte("criado_em", dateTo);
+  const conditions = [];
+  const params = [];
+  if (dateFrom) { params.push(dateFrom); conditions.push(`criado_em >= $${params.length}`); }
+  if (dateTo)   { params.push(dateTo);   conditions.push(`criado_em <= $${params.length}`); }
 
-  const { data } = await query;
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const rows = await query(`SELECT agent_id, interesse, criado_em FROM call_results ${where}`, params);
+
   const byAgent = {};
-  for (const r of data ?? []) {
+  for (const r of rows) {
     const aid = r.agent_id ?? "none";
     if (!byAgent[aid]) byAgent[aid] = { agent_id: r.agent_id, total: 0, alto: 0 };
     byAgent[aid].total++;
     if (r.interesse === "alto") byAgent[aid].alto++;
   }
 
-  const { data: agentRows } = await supabase.from("agents").select("id, nome");
-  const idToName = Object.fromEntries((agentRows ?? []).map((a) => [a.id, a.nome]));
+  const agentRows = await query("SELECT id, nome FROM agents");
+  const idToName = Object.fromEntries(agentRows.map(a => [a.id, a.nome]));
 
-  return Object.values(byAgent).map((row) => ({
+  return Object.values(byAgent).map(row => ({
     ...row,
-    agent_nome: row.agent_id ? idToName[row.agent_id] ?? "—" : "Sem agente",
+    agent_nome: row.agent_id ? (idToName[row.agent_id] ?? "—") : "Sem agente",
   }));
 }

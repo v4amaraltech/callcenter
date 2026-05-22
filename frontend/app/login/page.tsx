@@ -2,7 +2,7 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { getSupabase } from "@/lib/supabase";
+import { signIn } from "next-auth/react";
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -11,19 +11,11 @@ function LoginContent() {
 
   async function handleGoogle() {
     setLoading(true);
-    const supabase = getSupabase();
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: { hd: "v4company.com" },
-      },
-    });
+    await signIn("google", { callbackUrl: "/" });
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
-      {/* Background glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px]" />
       </div>
@@ -34,7 +26,6 @@ function LoginContent() {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="relative z-10 w-full max-w-sm px-8 py-10 rounded-xl bg-card border border-border shadow-[var(--shadow-sm)]"
       >
-        {/* Logo */}
         <div className="flex flex-col items-center mb-10">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
@@ -53,7 +44,7 @@ function LoginContent() {
             animate={{ opacity: 1, scale: 1 }}
             className="mb-6 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center"
           >
-            {error === "unauthorized_domain"
+            {error === "AccessDenied"
               ? "Acesso restrito a e-mails @v4company.com"
               : "Erro ao fazer login. Tente novamente."}
           </motion.div>

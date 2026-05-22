@@ -6,6 +6,8 @@ import type { NextConfig } from "next";
  *
  * Variável na Vercel: `BACKEND_PROXY_TARGET=https://api-call...` (sem barra final).
  */
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  output: "standalone",
+};
 
 export default nextConfig;

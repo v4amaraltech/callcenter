@@ -1,0 +1,19 @@
+﻿-- Dump de dados do Supabase — 2026-05-22 10:04
+SET client_encoding = 'UTF8';
+
+-- Tabela: bot_config (1 linhas)
+
+-- Tabela: agents (1 linhas)
+
+-- Tabela: campaigns (vazia)
+
+-- Tabela: leads (13 linhas)
+
+-- Tabela: call_results (11 linhas)
+
+-- Tabela: transcripts (107 linhas)
+
+-- Tabela: lead_info_chave (17 linhas)
+
+-- Tabela: user_approvals (2 linhas)
+

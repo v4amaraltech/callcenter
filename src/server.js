@@ -46,7 +46,8 @@ import { normalizeLeadContext } from "./util/leadContext.js";
 import { generateVoiceSamplePreview } from "./gemini/voicePreview.js";
 import { listCampaigns, getCampaignById, createCampaign, updateCampaign, deleteCampaign, getCampaignStats } from "./db/campaigns.js";
 import { getBotConfig, updateBotConfig } from "./db/botConfig.js";
-import { supabase } from "./db/supabase.js";
+import { query, queryOne } from "./db/pg.js";
+import { GoogleGenAI } from "@google/genai";
 
 const PORT = process.env.PORT ?? 3000;
 
@@ -776,31 +777,80 @@ app.get("/stats/by-agent", async (req, res) => {
 
 // ─── Routes: Admin (user approvals) ──────────────────────────────────────────
 
-app.get("/admin/users", async (req, res) => {
-  const { data, error } = await supabase
-    .from("user_approvals")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+app.get("/admin/users", async (_req, res) => {
+  try {
+    const rows = await query(
+      `SELECT ua.*, u.email AS email FROM user_approvals ua
+       LEFT JOIN users u ON u.id = ua.user_id
+       ORDER BY ua.created_at DESC`
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.patch("/admin/users/:userId", async (req, res) => {
-  const { approved, admin } = req.body;
-  const fields = {};
-  if (typeof approved === "boolean") {
-    fields.approved = approved;
-    fields.approved_at = approved ? new Date().toISOString() : null;
+  try {
+    const { approved, admin } = req.body;
+    const sets = [];
+    const params = [];
+    if (typeof approved === "boolean") {
+      params.push(approved); sets.push(`approved = $${params.length}`);
+      params.push(approved ? new Date().toISOString() : null);
+      sets.push(`approved_at = $${params.length}`);
+    }
+    if (typeof admin === "boolean") {
+      params.push(admin); sets.push(`admin = $${params.length}`);
+    }
+    if (!sets.length) return res.status(400).json({ error: "Nenhum campo para atualizar" });
+    params.push(req.params.userId);
+    const row = await queryOne(
+      `UPDATE user_approvals SET ${sets.join(", ")} WHERE user_id = $${params.length} RETURNING *`,
+      params
+    );
+    res.json(row);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  if (typeof admin === "boolean") fields.admin = admin;
-  const { data, error } = await supabase
-    .from("user_approvals")
-    .update(fields)
-    .eq("user_id", req.params.userId)
-    .select()
-    .single();
-  if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+});
+
+// ─── Routes: Generate Agent Script (substitui Edge Function Supabase) ─────────
+
+app.post("/api/generate-agent-script", async (req, res) => {
+  try {
+    const { empresa_nome, produto_servico, publico_alvo, objetivo, tom } = req.body ?? {};
+
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const prompt = `Você é um especialista em vendas B2B e criação de scripts para agentes de voz com IA.
+
+Crie um script completo para um agente de voz com as seguintes informações:
+- Empresa: ${empresa_nome ?? "Não informado"}
+- Produto/Serviço: ${produto_servico ?? "Não informado"}
+- Público-alvo: ${publico_alvo ?? "Não informado"}
+- Objetivo da ligação: ${objetivo ?? "qualificar o lead"}
+- Tom: ${tom ?? "profissional e consultivo"}
+
+Responda APENAS com um JSON válido (sem markdown) no formato:
+{
+  "prompt_template": "...",
+  "instrucoes_background": "...",
+  "empresa_contexto": { "nome": "...", "produto": "...", "diferenciais": "..." },
+  "quem_fala_primeiro": "agente"
+}`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
+
+    const text = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
+    const cleaned = text.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
+    res.json(JSON.parse(cleaned));
+  } catch (err) {
+    console.error("[generate-agent-script]", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ─── WebSocket /media ────────────────────────────────────────────────────────

@@ -13,6 +13,8 @@ function apiBaseUrl(): string {
   return env || "/api-ext";
 }
 
+export const apiBase = apiBaseUrl();
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const base = apiBaseUrl();
   const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;

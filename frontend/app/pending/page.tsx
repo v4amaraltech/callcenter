@@ -1,17 +1,9 @@
 "use client";
-import { getSupabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Clock } from "lucide-react";
 
 export default function PendingPage() {
-  const router = useRouter();
-
-  async function handleSignOut() {
-    await getSupabase().auth.signOut();
-    router.push("/login");
-  }
-
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center space-y-6 max-w-sm px-4">
@@ -28,7 +20,7 @@ export default function PendingPage() {
         <Button
           variant="outline"
           className="text-muted-foreground"
-          onClick={() => void handleSignOut()}
+          onClick={() => void signOut({ callbackUrl: "/login" })}
         >
           Sair
         </Button>

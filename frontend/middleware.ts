@@ -1,74 +1,36 @@
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { auth } from "@/lib/auth";
+import { NextResponse } from "next/server";
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  const { data: { user } } = await supabase.auth.getUser();
-
+export default auth((request) => {
+  const session = request.auth;
   const { pathname } = request.nextUrl;
-  const isLoginPage = pathname.startsWith("/login");
-  const isAuthCallback = pathname.startsWith("/auth");
-  const isPendingPage = pathname.startsWith("/pending");
 
-  if (!user && !isLoginPage && !isAuthCallback) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+  const isLoginPage    = pathname.startsWith("/login");
+  const isAuthRoute    = pathname.startsWith("/api/auth");
+  const isPendingPage  = pathname.startsWith("/pending");
+
+  if (!session && !isLoginPage && !isAuthRoute) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (user && isLoginPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+  if (session && isLoginPage) {
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
-  // Checar aprovação para usuários autenticados em rotas protegidas
-  if (user && !isLoginPage && !isAuthCallback) {
-    try {
-      const { data: approval, error } = await supabase
-        .from("user_approvals")
-        .select("approved")
-        .eq("user_id", user.id)
-        .single();
+  if (session && !isLoginPage && !isAuthRoute) {
+    const approved = (session.user as { approved?: boolean })?.approved;
 
-      // Se a tabela não existe ou erro desconhecido, deixa passar (não bloqueia)
-      if (!error && approval && !approval.approved && !isPendingPage) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/pending";
-        return NextResponse.redirect(url);
-      }
+    if (!approved && !isPendingPage) {
+      return NextResponse.redirect(new URL("/pending", request.url));
+    }
 
-      // Se o usuário já foi aprovado e ainda está no /pending, volta para o app
-      if (!error && approval?.approved && isPendingPage) {
-        const url = request.nextUrl.clone();
-        url.pathname = "/";
-        return NextResponse.redirect(url);
-      }
-    } catch {
-      // Falha silenciosa — não bloqueia acesso
+    if (approved && isPendingPage) {
+      return NextResponse.redirect(new URL("/", request.url));
     }
   }
 
-  return supabaseResponse;
-}
+  return NextResponse.next();
+});
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],

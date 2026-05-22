@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider, useTheme } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
+import { SessionProvider } from "next-auth/react";
 import { useState } from "react";
 
 function ThemedToaster() {
@@ -21,11 +22,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }));
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange={false}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-        <ThemedToaster />
-      </QueryClientProvider>
-    </ThemeProvider>
+    <SessionProvider>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange={false}>
+        <QueryClientProvider client={queryClient}>
+          {children}
+          <ThemedToaster />
+        </QueryClientProvider>
+      </ThemeProvider>
+    </SessionProvider>
   );
 }
