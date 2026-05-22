@@ -65,23 +65,28 @@ jobs:
     needs: [build-backend, build-frontend]
 
     steps:
-      # Preferir SSH: reaplica .env após pull da imagem (webhook Portainer zera AUTH_SECRET etc.)
-      - name: Deploy via SSH (recomendado)
-        if: ${{ secrets.VPS_SSH_KEY != '' }}
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_SSH_USER || 'root' }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script_stop: true
-          script: |
-            cd /root/callcenter
-            git pull origin main || true
-            bash /root/callcenter/vps_deploy.sh
-
-      # Fallback: webhook Portainer — após isso rode manualmente: bash /root/callcenter/fix_deploy.sh
-      - name: Webhook Portainer (fallback)
-        if: ${{ secrets.PORTAINER_WEBHOOK != '' && secrets.VPS_SSH_KEY == '' }}
+      # secrets não podem aparecer em `if:` — escolhe o método via env no shell
+      - name: Deploy no VPS
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_USER: ${{ secrets.VPS_SSH_USER }}
+          PORTAINER_WEBHOOK: ${{ secrets.PORTAINER_WEBHOOK }}
         run: |
-          curl -s -X POST "${{ secrets.PORTAINER_WEBHOOK }}"
-          echo "::warning::Após webhook, execute no VPS: bash /root/callcenter/fix_deploy.sh"
+          set -e
+          if [ -n "$VPS_SSH_KEY" ] && [ -n "$VPS_HOST" ]; then
+            echo "[deploy] SSH → $VPS_HOST"
+            mkdir -p ~/.ssh
+            printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+            chmod 600 ~/.ssh/deploy_key
+            ssh -o StrictHostKeyChecking=accept-new \
+              -i ~/.ssh/deploy_key \
+              "${VPS_SSH_USER:-root}@${VPS_HOST}" \
+              "cd /root/callcenter && git pull origin main || true && bash /root/callcenter/vps_deploy.sh"
+          elif [ -n "$PORTAINER_WEBHOOK" ]; then
+            echo "[deploy] Webhook Portainer"
+            curl -fsS -X POST "$PORTAINER_WEBHOOK"
+            echo "::warning::Após webhook, execute no VPS: bash /root/callcenter/fix_deploy.sh"
+          else
+            echo "::warning::Sem VPS_SSH_KEY nem PORTAINER_WEBHOOK — imagens publicadas no GHCR; atualize o stack manualmente no VPS."
+          fi
