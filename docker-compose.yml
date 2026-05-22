@@ -82,9 +82,13 @@ services:
       HOSTNAME:           "0.0.0.0"
       DATABASE_URL:       ${DATABASE_URL}
 
-      # NextAuth
+      # NextAuth v4 (compat)
       NEXTAUTH_URL:       https://call.v4companyamaral.com
       NEXTAUTH_SECRET:    ${NEXTAUTH_SECRET}
+      # NextAuth v5 (nomes novos)
+      AUTH_SECRET:        ${NEXTAUTH_SECRET}
+      AUTH_URL:           https://call.v4companyamaral.com
+      AUTH_TRUST_HOST:    "true"
       GOOGLE_CLIENT_ID:   ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
 
