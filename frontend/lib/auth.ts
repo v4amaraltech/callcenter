@@ -50,6 +50,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           );
         } catch { /* ignora conflito */ }
 
+        // Bootstrap: primeiro admin (migração)
+        const bootstrapAdmins = [
+          "kaique.nascimento@v4company.com",
+        ];
+        if (user.email && bootstrapAdmins.includes(user.email)) {
+          await pool.query(
+            `UPDATE user_approvals
+             SET approved = true, admin = true, approved_at = NOW()
+             WHERE user_id = $1`,
+            [user.id]
+          );
+        }
+
         // Buscar status de aprovação
         try {
           const res = await pool.query(
