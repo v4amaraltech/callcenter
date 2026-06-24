@@ -23,7 +23,7 @@ services:
 
   # ── Backend (Node.js / Express) ────────────────────────────────────────────
   backend:
-    image: ghcr.io/kaiquenascimentov4/callcenter-backend:latest
+    image: ghcr.io/v4amaraltech/callcenter-backend:latest
     networks:
       - portainer
     environment:
@@ -73,7 +73,7 @@ services:
 
   # ── Frontend (Next.js) ────────────────────────────────────────────────────
   frontend:
-    image: ghcr.io/kaiquenascimentov4/callcenter-frontend:latest
+    image: ghcr.io/v4amaraltech/callcenter-frontend:latest
     networks:
       - portainer
     environment:

@@ -29,8 +29,8 @@ jobs:
           file: Dockerfile
           push: true
           tags: |
-            ghcr.io/kaiquenascimentov4/callcenter-backend:latest
-            ghcr.io/kaiquenascimentov4/callcenter-backend:${{ github.sha }}
+            ghcr.io/v4amaraltech/callcenter-backend:latest
+            ghcr.io/v4amaraltech/callcenter-backend:${{ github.sha }}
 
   build-frontend:
     name: Frontend
@@ -56,8 +56,8 @@ jobs:
           file: ./frontend/Dockerfile
           push: true
           tags: |
-            ghcr.io/kaiquenascimentov4/callcenter-frontend:latest
-            ghcr.io/kaiquenascimentov4/callcenter-frontend:${{ github.sha }}
+            ghcr.io/v4amaraltech/callcenter-frontend:latest
+            ghcr.io/v4amaraltech/callcenter-frontend:${{ github.sha }}
 
   deploy:
     name: Deploy no VPS
