@@ -118,7 +118,7 @@ export default function ResultsPage() {
         <table className="w-full text-sm">
           <thead className="border-b border-border bg-muted/40">
             <tr>
-              {["Lead", "Agente", "Interesse", "Humor", "Próxima ação", "Resumo", "Data", ""].map((h) => (
+              {["Lead", "Telefone", "Agente", "Interesse", "Humor", "Próxima ação", "Resumo", "Data/Hora", ""].map((h) => (
                 <th key={h} className="h-12 px-4 text-left align-middle text-xs font-medium text-muted-foreground">
                   {h}
                 </th>
@@ -128,13 +128,13 @@ export default function ResultsPage() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={8} className="text-center py-12 text-muted-foreground">
+                <td colSpan={9} className="text-center py-12 text-muted-foreground">
                   Carregando…
                 </td>
               </tr>
             ) : data?.data?.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-12 text-muted-foreground">
+                <td colSpan={9} className="text-center py-12 text-muted-foreground">
                   Nenhuma ligação ainda
                 </td>
               </tr>
@@ -142,6 +142,7 @@ export default function ResultsPage() {
               data?.data?.map((r) => (
                 <tr key={r.id} className="border-b border-border last:border-0 transition-colors hover:bg-muted/50">
                   <td className="p-4 font-medium text-foreground">{r.leads?.nome ?? r.lead_id ?? "—"}</td>
+                  <td className="p-4 text-sm text-muted-foreground">{r.leads?.telefone ?? "—"}</td>
                   <td className="p-4 text-sm text-muted-foreground">{r.agents?.nome ?? "—"}</td>
                   <td className="px-4 py-3">
                     <Badge variant="secondary" className={interesseBadge(r.interesse)}>
@@ -160,7 +161,7 @@ export default function ResultsPage() {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground max-w-[200px] truncate">{r.resumo}</td>
                   <td className="px-4 py-3 text-muted-foreground text-[12px] whitespace-nowrap">
-                    {new Date(r.criado_em).toLocaleDateString("pt-BR")}
+                    {new Date(r.criado_em).toLocaleString("pt-BR")}
                   </td>
                   <td className="px-4 py-3">
                     <Button size="icon" variant="ghost" onClick={() => void openResult(r)} className="w-8 h-8 hover:bg-accent">
@@ -181,11 +182,15 @@ export default function ResultsPage() {
           </DialogHeader>
           {selected && (
             <div className="space-y-4 text-sm">
-              {selected.agents?.nome && (
-                <p className="text-[11px] text-muted-foreground">
-                  Agente: <span className="text-foreground">{selected.agents.nome}</span>
-                </p>
-              )}
+              <div className="flex flex-wrap gap-4 text-[11px] text-muted-foreground">
+                {selected.agents?.nome && (
+                  <span>Agente: <span className="text-foreground">{selected.agents.nome}</span></span>
+                )}
+                {selected.leads?.telefone && (
+                  <span>Telefone: <span className="text-foreground">{selected.leads.telefone}</span></span>
+                )}
+                <span>Data: <span className="text-foreground">{new Date(selected.criado_em).toLocaleString("pt-BR")}</span></span>
+              </div>
               <div className="grid grid-cols-3 gap-3">
                 {[
                   {
@@ -238,20 +243,4 @@ export default function ResultsPage() {
                               : "bg-muted text-foreground border border-border"
                           }`}
                         >
-                          <span className="text-[10px] font-medium opacity-60 block mb-0.5">
-                            {t.role === "agent" ? "Agente" : "Cliente"}
-                          </span>
-                          <p className="whitespace-pre-wrap">{t.texto}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
+                          <span className="text-[10px] font-medium o

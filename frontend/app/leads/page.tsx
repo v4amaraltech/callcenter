@@ -358,7 +358,7 @@ export default function LeadsPage() {
                     className="h-4 w-4 rounded border-border accent-[var(--primary)]"
                   />
                 </th>
-                {["Nome", "Empresa", "Telefone", "Agente", "Status", "Tentativas", ""].map((header) => (
+                {["Nome", "Empresa", "Telefone", "Agente", "Status", "Tentativas", "Cadastro", ""].map((header) => (
                   <th key={header} className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                     {header}
                   </th>
@@ -393,6 +393,9 @@ export default function LeadsPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{lead.tentativas}</td>
+                    <td className="px-4 py-3 text-muted-foreground text-[12px] whitespace-nowrap">
+                      {lead.criado_em ? new Date(lead.criado_em).toLocaleDateString("pt-BR") : "—"}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-1">
                         <Button size="icon" variant="ghost" onClick={() => call.mutate(lead.id)} title="Ligar agora" className="h-8 w-8 hover:bg-green-500/10">
@@ -625,6 +628,9 @@ export default function LeadsPage() {
                   ["Cargo", detail.cargo ?? "—"],
                   ["Telefone", detail.telefone],
                   ["Tentativas", String(detail.tentativas)],
+                  ["Cadastro", detail.criado_em ? new Date(detail.criado_em).toLocaleString("pt-BR") : "—"],
+                  ["Última ligação", detail.ultima_ligacao_em ? new Date(detail.ultima_ligacao_em).toLocaleString("pt-BR") : "—"],
+                  ["Origem", detail.origem ?? "—"],
                 ].map(([key, value]) => (
                   <span key={key} className="contents">
                     <span className="font-medium text-foreground">{key}</span>
@@ -674,20 +680,4 @@ export default function LeadsPage() {
                   {detail.historico_ligacoes?.map((result) => (
                     <div key={result.id} className="space-y-1 rounded-lg border border-border bg-card px-3 py-2">
                       <div className="flex gap-2">
-                        <Badge variant="secondary" className={interesseBadge(result.interesse)}>
-                          {result.interesse}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">{new Date(result.criado_em).toLocaleDateString("pt-BR")}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">{result.resumo}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </SheetContent>
-      </Sheet>
-    </div>
-  );
-}
+                        <Badge variant="secondary" className={interesseBadge(result.int
