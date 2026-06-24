@@ -1,28 +1,48 @@
 import { query, queryOne, execute } from "./pg.js";
 import { getLatestLeadByPhone } from "./leads.js";
 
+function countWords(text) {
+  return (text ?? "").split(/\s+/).filter(Boolean).length;
+}
+
 export async function saveCallResult({
   callSid, leadId, agentId,
   confirmado, pessoa_correta, interesse, humor,
   resumo, proxima_acao,
 }) {
   const transcripts = await query(
-    "SELECT role, texto FROM transcripts WHERE call_sid = $1 ORDER BY ts",
+    "SELECT role, texto, ts FROM transcripts WHERE call_sid = $1 ORDER BY ts",
     [callSid ?? ""]
   );
 
   const transcricao_usuario = transcripts.filter(r => r.role === "user").map(r => r.texto).join(" ");
   const transcricao_agente  = transcripts.filter(r => r.role === "agent").map(r => r.texto).join(" ");
 
+  // Calcular duração pela diferença entre primeiro e último transcript
+  let duracao_segundos = null;
+  if (transcripts.length >= 2) {
+    const first = new Date(transcripts[0].ts);
+    const last  = new Date(transcripts[transcripts.length - 1].ts);
+    const diff  = Math.round((last - first) / 1000);
+    if (diff > 0) duracao_segundos = diff;
+  }
+
+  // Contagem de palavras
+  const palavras_agente  = countWords(transcricao_agente);
+  const palavras_cliente = countWords(transcricao_usuario);
+  const palavras_total   = palavras_agente + palavras_cliente;
+
   const result = await queryOne(
     `INSERT INTO call_results
        (call_sid, lead_id, agent_id, confirmado, pessoa_correta, interesse, humor,
-        resumo, proxima_acao, transcricao_usuario, transcricao_agente)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+        resumo, proxima_acao, transcricao_usuario, transcricao_agente,
+        duracao_segundos, palavras_total, palavras_agente, palavras_cliente)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
      RETURNING *`,
     [callSid ?? null, leadId ?? null, agentId ?? null,
      confirmado, pessoa_correta, interesse, humor,
-     resumo, proxima_acao, transcricao_usuario, transcricao_agente]
+     resumo, proxima_acao, transcricao_usuario, transcricao_agente,
+     duracao_segundos, palavras_total || null, palavras_agente || null, palavras_cliente || null]
   );
 
   if (leadId) {
@@ -30,7 +50,7 @@ export async function saveCallResult({
       ? "nao_contatar"
       : interesse === "alto" ? "convertido" : "contactado";
     await execute(
-      "UPDATE leads SET status = $1, ultima_ligacao_em = now() WHERE id = $2",
+      "UPDATE leads SET status = $1, ultima_ligacao_em = now(), tentativas = tentativas + 1 WHERE id = $2",
       [novoStatus, leadId]
     );
   }

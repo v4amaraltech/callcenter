@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { resultsApi, agentsApi, type CallResult } from "@/lib/api";
 import { PageHeader } from "@/components/app/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -8,16 +9,19 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { interesseBadge, humorBadge, proximo } from "@/lib/badges";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 
 type Bubble = { role: "user" | "agent"; texto: string; ts: string; ts_end?: string };
 
 export default function ResultsPage() {
+  const router = useRouter();
   const [interesse, setInteresse] = useState<string>("todos");
   const [humor, setHumor] = useState<string>("todos");
   const [proxima, setProxima] = useState<string>("todos");
   const [agentFilter, setAgentFilter] = useState<string>("todos");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
   const [selected, setSelected] = useState<CallResult | null>(null);
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
   const [loadingT, setLoadingT] = useState(false);
@@ -28,13 +32,15 @@ export default function ResultsPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["results", interesse, humor, proxima, agentFilter],
+    queryKey: ["results", interesse, humor, proxima, agentFilter, page],
     queryFn: () =>
       resultsApi.list({
         ...(interesse !== "todos" ? { interesse } : {}),
         ...(humor !== "todos" ? { humor } : {}),
         ...(proxima !== "todos" ? { proxima_acao: proxima } : {}),
         ...(agentFilter !== "todos" ? { agent_id: agentFilter } : {}),
+        page: String(page),
+        limit: String(PAGE_SIZE),
       }),
   });
 
@@ -164,15 +170,37 @@ export default function ResultsPage() {
                     {new Date(r.criado_em).toLocaleString("pt-BR")}
                   </td>
                   <td className="px-4 py-3">
-                    <Button size="icon" variant="ghost" onClick={() => void openResult(r)} className="w-8 h-8 hover:bg-accent">
-                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button size="icon" variant="ghost" onClick={() => void openResult(r)} className="w-8 h-8 hover:bg-accent" title="Pré-visualizar">
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => router.push(`/results/${r.id}`)} className="w-8 h-8 hover:bg-accent" title="Ver documentação completa">
+                        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
+        {/* Paginação */}
+        {(data?.count ?? 0) > PAGE_SIZE && (
+          <div className="flex items-center justify-between border-t border-border px-4 py-3">
+            <p className="text-xs text-muted-foreground">
+              {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, data?.count ?? 0)} de {data?.count ?? 0} ligações
+            </p>
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="h-7 px-2 text-xs">
+                ← Anterior
+              </Button>
+              <span className="px-2 text-xs text-muted-foreground">Página {page} de {Math.ceil((data?.count ?? 0) / PAGE_SIZE)}</span>
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={page * PAGE_SIZE >= (data?.count ?? 0)} className="h-7 px-2 text-xs">
+                Próxima →
+              </Button>
+            </div>
+          </div>
+        )}
       </motion.div>
 
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
@@ -243,4 +271,20 @@ export default function ResultsPage() {
                               : "bg-muted text-foreground border border-border"
                           }`}
                         >
-                          <span className="text-[10px] font-medium o
+                          <span className="text-[10px] font-medium opacity-60 block mb-0.5">
+                            {t.role === "agent" ? "Agente" : "Cliente"}
+                          </span>
+                          <p className="whitespace-pre-wrap">{t.texto}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

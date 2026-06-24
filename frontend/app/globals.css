@@ -49,110 +49,112 @@
 
 /* ── Light mode ───────────────────────────────────────────────────────────── */
 :root {
-  --background: hsl(216 33% 97%);
-  --foreground: hsl(221 39% 11%);
+  --background: hsl(220 20% 96%);
+  --foreground: hsl(222 47% 10%);
   --card: hsl(0 0% 100%);
-  --card-foreground: hsl(221 39% 11%);
+  --card-foreground: hsl(222 47% 10%);
   --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(221 39% 11%);
-  --primary: hsl(4 90% 58%);
+  --popover-foreground: hsl(222 47% 10%);
+  --primary: hsl(4 90% 55%);
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(216 20% 94%);
-  --secondary-foreground: hsl(221 28% 18%);
-  --muted: hsl(216 20% 94%);
-  --muted-foreground: hsl(220 9% 46%);
-  --accent: hsl(216 20% 93%);
-  --accent-foreground: hsl(221 28% 18%);
-  --destructive: hsl(0 84% 60%);
-  --border: hsl(214 32% 91%);
-  --input: hsl(214 32% 91%);
-  --ring: hsl(4 90% 58%);
-  --radius: 0.5rem;
+  --secondary: hsl(220 16% 92%);
+  --secondary-foreground: hsl(222 30% 18%);
+  --muted: hsl(220 16% 93%);
+  --muted-foreground: hsl(220 10% 44%);
+  --accent: hsl(220 16% 91%);
+  --accent-foreground: hsl(222 30% 18%);
+  --destructive: hsl(0 84% 58%);
+  --border: hsl(220 20% 88%);
+  --input: hsl(220 20% 88%);
+  --ring: hsl(4 90% 55%);
+  --radius: 0.625rem;
 
   /* Status semânticos */
-  --success-bg: hsl(141 76% 93%);
-  --success-text: hsl(140 60% 26%);
-  --warning-bg: hsl(45 93% 94%);
-  --warning-text: hsl(32 81% 29%);
-  --info-bg: hsl(214 100% 94%);
-  --info-text: hsl(221 72% 48%);
-  --purple-bg: hsl(270 100% 96%);
-  --purple-text: hsl(263 67% 37%);
+  --success-bg: hsl(141 72% 92%);
+  --success-text: hsl(140 62% 22%);
+  --warning-bg: hsl(43 96% 93%);
+  --warning-text: hsl(32 84% 26%);
+  --info-bg: hsl(214 96% 93%);
+  --info-text: hsl(221 72% 44%);
+  --purple-bg: hsl(270 96% 95%);
+  --purple-text: hsl(263 68% 34%);
 
   /* Charts */
-  --chart-1: hsl(4 90% 58%);
-  --chart-2: hsl(16 100% 62%);
-  --chart-3: hsl(24 100% 70%);
-  --chart-4: hsl(32 100% 78%);
-  --chart-5: hsl(40 100% 84%);
+  --chart-1: hsl(4 90% 55%);
+  --chart-2: hsl(207 90% 54%);
+  --chart-3: hsl(141 76% 42%);
+  --chart-4: hsl(32 98% 55%);
+  --chart-5: hsl(270 70% 58%);
 
-  /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+  /* Shadows — mais definidas, estilo Aircall */
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.1), 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 4px 8px rgba(16, 24, 40, 0.08), 0 2px 4px rgba(16, 24, 40, 0.05);
+  --shadow-lg: 0 12px 24px rgba(16, 24, 40, 0.1), 0 4px 8px rgba(16, 24, 40, 0.06);
 
   /* Sidebar */
-  --sidebar: hsl(0 0% 100%);
-  --sidebar-foreground: hsl(221 28% 18%);
-  --sidebar-primary: hsl(4 90% 58%);
+  --sidebar: hsl(222 40% 12%);
+  --sidebar-foreground: hsl(0 0% 92%);
+  --sidebar-primary: hsl(4 90% 55%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(216 20% 94%);
-  --sidebar-accent-foreground: hsl(221 28% 18%);
-  --sidebar-border: hsl(214 32% 91%);
-  --sidebar-ring: hsl(4 90% 58%);
+  --sidebar-accent: hsl(222 35% 18%);
+  --sidebar-accent-foreground: hsl(0 0% 92%);
+  --sidebar-border: hsl(222 35% 20%);
+  --sidebar-ring: hsl(4 90% 55%);
 }
 
 /* ── Dark mode ────────────────────────────────────────────────────────────── */
 .dark {
-  --background: hsl(0 0% 0%);
-  --foreground: hsl(0 0% 95%);
-  --card: hsl(0 0% 5%);
-  --card-foreground: hsl(0 0% 95%);
-  --popover: hsl(0 0% 6%);
-  --popover-foreground: hsl(0 0% 95%);
+  --background: hsl(222 28% 8%);
+  --foreground: hsl(0 0% 94%);
+  --card: hsl(222 25% 11%);
+  --card-foreground: hsl(0 0% 94%);
+  --popover: hsl(222 25% 12%);
+  --popover-foreground: hsl(0 0% 94%);
   --primary: hsl(4 90% 58%);
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(0 0% 9%);
-  --secondary-foreground: hsl(0 0% 95%);
-  --muted: hsl(0 0% 8%);
-  --muted-foreground: hsl(0 0% 65%);
-  --accent: hsl(0 0% 11%);
-  --accent-foreground: hsl(0 0% 95%);
-  --destructive: hsl(0 62.8% 34%);
-  --border: hsl(0 0% 14%);
-  --input: hsl(0 0% 14%);
+  --secondary: hsl(222 20% 16%);
+  --secondary-foreground: hsl(0 0% 94%);
+  --muted: hsl(222 20% 14%);
+  --muted-foreground: hsl(220 10% 58%);
+  --accent: hsl(222 20% 18%);
+  --accent-foreground: hsl(0 0% 94%);
+  --destructive: hsl(0 72% 46%);
+  --border: hsl(222 20% 20%);
+  --input: hsl(222 20% 20%);
   --ring: hsl(4 90% 58%);
 
   /* Status semânticos (dark) */
-  --success-bg: hsl(140 50% 15%);
-  --success-text: hsl(141 70% 60%);
-  --warning-bg: hsl(45 70% 15%);
-  --warning-text: hsl(45 90% 65%);
-  --info-bg: hsl(214 70% 15%);
-  --info-text: hsl(214 80% 70%);
-  --purple-bg: hsl(263 50% 15%);
-  --purple-text: hsl(263 70% 70%);
+  --success-bg: hsl(140 45% 14%);
+  --success-text: hsl(141 70% 58%);
+  --warning-bg: hsl(43 60% 14%);
+  --warning-text: hsl(43 90% 62%);
+  --info-bg: hsl(214 60% 14%);
+  --info-text: hsl(214 80% 68%);
+  --purple-bg: hsl(263 45% 14%);
+  --purple-text: hsl(263 70% 72%);
 
   /* Charts */
   --chart-1: hsl(4 90% 58%);
-  --chart-2: hsl(16 100% 62%);
-  --chart-3: hsl(24 100% 70%);
-  --chart-4: hsl(32 100% 78%);
-  --chart-5: hsl(40 100% 84%);
+  --chart-2: hsl(207 90% 54%);
+  --chart-3: hsl(141 76% 42%);
+  --chart-4: hsl(32 98% 55%);
+  --chart-5: hsl(270 70% 58%);
 
   /* Shadows */
-  --shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(255, 255, 255, 0.04);
-  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.03);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.6);
 
   /* Sidebar */
-  --sidebar: hsl(0 0% 3%);
-  --sidebar-foreground: hsl(0 0% 95%);
+  --sidebar: hsl(222 35% 7%);
+  --sidebar-foreground: hsl(0 0% 90%);
   --sidebar-primary: hsl(4 90% 58%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(0 0% 9%);
-  --sidebar-accent-foreground: hsl(0 0% 95%);
-  --sidebar-border: hsl(0 0% 14%);
+  --sidebar-accent: hsl(222 30% 14%);
+  --sidebar-accent-foreground: hsl(0 0% 90%);
+  --sidebar-border: hsl(222 30% 16%);
   --sidebar-ring: hsl(4 90% 58%);
 }
 
@@ -163,40 +165,54 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   html {
     @apply font-sans;
     scroll-behavior: smooth;
   }
   ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 5px;
+    height: 5px;
   }
   ::-webkit-scrollbar-track {
-    background: var(--card);
+    background: transparent;
   }
   ::-webkit-scrollbar-thumb {
     background: var(--border);
-    border-radius: 2px;
+    border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--primary);
+    background: var(--muted-foreground);
+  }
+  /* Foco mais limpo */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }
 
 @layer utilities {
   .page-shell {
-    @apply mx-auto flex w-full max-w-[1760px] flex-col gap-6;
+    @apply mx-auto flex w-full max-w-[1800px] flex-col gap-6 px-1;
   }
 
   .panel-grid {
     @apply grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_360px];
   }
 
-  /* Sombra e borda padrão do design system para cards */
+  /* Cards elevados — sombra sutil estilo Aircall */
   .card-elevated {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+  }
+
+  /* Tabelas com hover suave */
+  .table-row-hover {
+    @apply transition-colors duration-100 hover:bg-muted/40;
   }
 
   /* Badges semânticos */
@@ -204,20 +220,34 @@
     background-color: var(--success-bg);
     color: var(--success-text);
     border-color: transparent;
+    font-weight: 500;
   }
   .badge-warning {
     background-color: var(--warning-bg);
     color: var(--warning-text);
     border-color: transparent;
+    font-weight: 500;
   }
   .badge-info {
     background-color: var(--info-bg);
     color: var(--info-text);
     border-color: transparent;
+    font-weight: 500;
   }
   .badge-purple {
     background-color: var(--purple-bg);
     color: var(--purple-text);
     border-color: transparent;
+    font-weight: 500;
+  }
+
+  /* Número grande para stat cards */
+  .stat-value {
+    @apply text-3xl font-bold tracking-tight text-foreground tabular-nums;
+  }
+
+  /* Header de seção */
+  .section-label {
+    @apply text-[11px] font-semibold uppercase tracking-widest text-muted-foreground;
   }
 }

@@ -97,6 +97,8 @@ export default function LeadsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [agentFilter, setAgentFilter] = useState<string>("todos");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
   const [form, setForm] = useState<Partial<Lead>>(EMPTY);
   const [openForm, setOpenForm] = useState(false);
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
@@ -118,12 +120,14 @@ export default function LeadsPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["leads", search, statusFilter, agentFilter],
+    queryKey: ["leads", search, statusFilter, agentFilter, page],
     queryFn: () =>
       leadsApi.list({
         ...(search ? { q: search } : {}),
         ...(statusFilter !== "todos" ? { status: statusFilter } : {}),
         ...(agentFilter !== "todos" ? { agent_id: agentFilter } : {}),
+        page: String(page),
+        limit: String(PAGE_SIZE),
       }),
   });
 
@@ -425,6 +429,37 @@ export default function LeadsPage() {
               )}
             </tbody>
           </table>
+          {/* Paginação */}
+          {(data?.count ?? 0) > PAGE_SIZE && (
+            <div className="flex items-center justify-between border-t border-border px-4 py-3">
+              <p className="text-xs text-muted-foreground">
+                {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, data?.count ?? 0)} de {data?.count ?? 0} leads
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="h-7 px-2 text-xs"
+                >
+                  ← Anterior
+                </Button>
+                <span className="px-2 text-xs text-muted-foreground">
+                  Página {page} de {Math.ceil((data?.count ?? 0) / PAGE_SIZE)}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page * PAGE_SIZE >= (data?.count ?? 0)}
+                  className="h-7 px-2 text-xs"
+                >
+                  Próxima →
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       ) : null}
 
@@ -680,4 +715,20 @@ export default function LeadsPage() {
                   {detail.historico_ligacoes?.map((result) => (
                     <div key={result.id} className="space-y-1 rounded-lg border border-border bg-card px-3 py-2">
                       <div className="flex gap-2">
-                        <Badge variant="secondary" className={interesseBadge(result.int
+                        <Badge variant="secondary" className={interesseBadge(result.interesse)}>
+                          {result.interesse}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">{new Date(result.criado_em).toLocaleDateString("pt-BR")}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{result.resumo}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}
