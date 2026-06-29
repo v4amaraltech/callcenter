@@ -15,26 +15,27 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-700 to-red-500 dark:from-red-900 dark:to-red-700 relative overflow-hidden">
+      {/* Decorative blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px]" />
+        <div className="absolute -top-24 -left-24 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-black/10 rounded-full blur-3xl" />
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-sm px-8 py-10 rounded-lg bg-card card-elevated"
+        className="relative z-10 w-full max-w-sm px-8 py-10 rounded-2xl bg-white dark:bg-neutral-950 shadow-2xl"
       >
         <div className="flex flex-col items-center mb-10">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">V4</span>
-            </div>
-            <span className="text-foreground font-semibold text-lg tracking-tight">Voice Agent</span>
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-red-600 to-red-500 shadow-lg mb-4">
+            <span className="text-white font-bold text-base tracking-widest">V4</span>
           </div>
-          <p className="text-muted-foreground text-sm text-center mt-1">
-            Painel interno da V4 Company
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-500 mb-0.5">V4 Company</p>
+          <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">V4 Call</h1>
+          <p className="text-gray-500 dark:text-neutral-400 text-sm text-center mt-1.5">
+            Agentes de ligação inteligentes
           </p>
         </div>
 
@@ -42,7 +43,7 @@ function LoginContent() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mb-6 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center"
+            className="mb-6 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 dark:bg-red-950/50 dark:border-red-800 dark:text-red-400 text-sm text-center"
           >
             {error === "AccessDenied"
               ? "Acesso restrito a e-mails @v4company.com"
@@ -53,17 +54,17 @@ function LoginContent() {
         <button
           onClick={handleGoogle}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         >
           {loading ? (
-            <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
             <GoogleIcon />
           )}
           {loading ? "Redirecionando..." : "Entrar com Google"}
         </button>
 
-        <p className="text-center text-muted-foreground text-xs mt-6">
+        <p className="text-center text-gray-400 dark:text-neutral-500 text-xs mt-6">
           Somente e-mails @v4company.com
         </p>
       </motion.div>

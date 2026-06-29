@@ -671,12 +671,13 @@ function AgentEditorShell({ agentId, initialAgent }: { agentId?: string; initial
               {[
                 ["overview", "Visão geral"],
                 ["prompt", "Prompt e comportamento"],
+                ["roteiro", "Roteiro"],
                 ["context", "Contexto da empresa"],
                 ["call", "Configurações da ligação"],
                 ["integrations", "Webhooks e integrações"],
                 ["test", "Teste do agente"],
               ].map(([value, label]) => (
-                <TabsTrigger key={value} value={value} className="min-w-[170px] rounded-lg px-4 py-2 text-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground xl:min-w-[150px]">
+                <TabsTrigger key={value} value={value} className="min-w-[150px] rounded-lg px-4 py-2 text-center data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   {label}
                 </TabsTrigger>
               ))}
@@ -820,6 +821,13 @@ function AgentEditorShell({ agentId, initialAgent }: { agentId?: string; initial
                   </div>
                 </div>
               </FormSection>
+            </TabsContent>
+
+            <TabsContent value="roteiro" className="space-y-6">
+              <RoteiroEditor
+                value={(form as any).roteiro ?? null}
+                onChange={(roteiro: any) => setForm((prev: any) => ({ ...prev, roteiro }))}
+              />
             </TabsContent>
 
             <TabsContent value="call" className="space-y-6">
@@ -1081,4 +1089,164 @@ export function AgentEditor({ agentId }: { agentId?: string }) {
   }
 
   return <AgentEditorShell key={agentId ?? "new"} agentId={agentId} initialAgent={agent ?? EMPTY_AGENT} />;
+}
+
+// ── RoteiroEditor ─────────────────────────────────────────────────────────────
+
+type Objecao = { objecao: string; resposta: string };
+type Roteiro = {
+  abertura?: string;
+  qualificacao?: string[];
+  apresentacao?: string;
+  objecoes?: Objecao[];
+  cta?: string;
+  voicemail?: string;
+  encerramento?: string;
+};
+
+function RoteiroEditor({ value, onChange }: { value: Roteiro | null; onChange: (r: Roteiro) => void }) {
+  const r: Roteiro = value ?? {};
+  const set = (partial: Partial<Roteiro>) => onChange({ ...r, ...partial });
+
+  const [newQ, setNewQ] = useState("");
+  const [newObj, setNewObj] = useState({ objecao: "", resposta: "" });
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 px-4 py-3 text-sm text-blue-700 dark:text-blue-400">
+        O roteiro estruturado é injetado no system prompt de cada ligação, guiando a IA através das fases
+        de abertura → qualificação → apresentação → objeções → CTA → encerramento.
+        Deixe em branco as seções que não se aplicam.
+      </div>
+
+      {/* Abertura */}
+      <FormSection title="Abertura" description="Hook inicial — máx. 15 segundos de fala. Apresente-se, confirme o contato e abra o diálogo.">
+        <Textarea
+          rows={3}
+          value={r.abertura ?? ""}
+          onChange={e => set({ abertura: e.target.value })}
+          placeholder="Ex.: Olá, {{nome}}! Aqui é a Maria da V4 Company. Você tem um minutinho? Estou ligando porque..."
+        />
+        <p className="text-xs text-muted-foreground mt-1">Use {"{{nome}}"}, {"{{empresa}}"}, {"{{oferta}}"} para inserir dados do lead.</p>
+      </FormSection>
+
+      {/* Qualificação */}
+      <FormSection title="Perguntas de qualificação" description="2-3 perguntas para descobrir dor e fit. O agente escolhe 1-2 para não sobrecarregar.">
+        <div className="space-y-2">
+          {(r.qualificacao ?? []).map((q, i) => (
+            <div key={i} className="flex gap-2">
+              <Input value={q} onChange={e => {
+                const arr = [...(r.qualificacao ?? [])];
+                arr[i] = e.target.value;
+                set({ qualificacao: arr });
+              }} />
+              <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-muted-foreground hover:text-red-500"
+                onClick={() => set({ qualificacao: (r.qualificacao ?? []).filter((_, j) => j !== i) })}>
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          <div className="flex gap-2">
+            <Input value={newQ} onChange={e => setNewQ(e.target.value)}
+              placeholder="Ex.: Você já usa alguma ferramenta de automação de ligações?"
+              onKeyDown={e => {
+                if (e.key === "Enter" && newQ.trim()) {
+                  set({ qualificacao: [...(r.qualificacao ?? []), newQ.trim()] });
+                  setNewQ("");
+                  e.preventDefault();
+                }
+              }}
+            />
+            <Button type="button" variant="outline" onClick={() => {
+              if (!newQ.trim()) return;
+              set({ qualificacao: [...(r.qualificacao ?? []), newQ.trim()] });
+              setNewQ("");
+            }}>Adicionar</Button>
+          </div>
+        </div>
+      </FormSection>
+
+      {/* Apresentação */}
+      <FormSection title="Apresentação" description="Como o agente apresenta a solução em função do que descobriu na qualificação.">
+        <Textarea
+          rows={3}
+          value={r.apresentacao ?? ""}
+          onChange={e => set({ apresentacao: e.target.value })}
+          placeholder="Ex.: Dado o que você me disse, acredito que faria sentido para você... {{oferta}}"
+        />
+      </FormSection>
+
+      {/* Objeções */}
+      <FormSection title="Biblioteca de objeções" description="Respostas prontas para as objeções mais comuns. O agente usa quando o cliente as levantar.">
+        <div className="space-y-3">
+          {(r.objecoes ?? []).map((o, i) => (
+            <div key={i} className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <div className="flex-1 space-y-2">
+                  <Input value={o.objecao} onChange={e => {
+                    const arr = [...(r.objecoes ?? [])];
+                    arr[i] = { ...arr[i], objecao: e.target.value };
+                    set({ objecoes: arr });
+                  }} placeholder="Objeção do cliente" />
+                  <Textarea rows={2} value={o.resposta} onChange={e => {
+                    const arr = [...(r.objecoes ?? [])];
+                    arr[i] = { ...arr[i], resposta: e.target.value };
+                    set({ objecoes: arr });
+                  }} placeholder="Resposta do agente" />
+                </div>
+                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-red-500 mt-0.5"
+                  onClick={() => set({ objecoes: (r.objecoes ?? []).filter((_, j) => j !== i) })}>
+                  <XCircle className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+          <div className="rounded-lg border border-dashed border-border p-3 space-y-2">
+            <Input value={newObj.objecao} onChange={e => setNewObj(v => ({ ...v, objecao: e.target.value }))}
+              placeholder="Ex.: Não tenho tempo agora" />
+            <Textarea rows={2} value={newObj.resposta} onChange={e => setNewObj(v => ({ ...v, resposta: e.target.value }))}
+              placeholder="Ex.: Entendo! Posso deixar meu contato e você me retorna quando for melhor?" />
+            <Button type="button" variant="outline" className="w-full"
+              onClick={() => {
+                if (!newObj.objecao.trim() || !newObj.resposta.trim()) return;
+                set({ objecoes: [...(r.objecoes ?? []), { ...newObj }] });
+                setNewObj({ objecao: "", resposta: "" });
+              }}>
+              Adicionar objeção
+            </Button>
+          </div>
+        </div>
+      </FormSection>
+
+      {/* CTA */}
+      <FormSection title="CTA — Chamada para ação" description="O que o agente pede ao cliente no fechamento. Seja específico e único.">
+        <Textarea
+          rows={2}
+          value={r.cta ?? ""}
+          onChange={e => set({ cta: e.target.value })}
+          placeholder="Ex.: Posso agendar uma demonstração de 20 minutos para você ver funcionando?"
+        />
+      </FormSection>
+
+      {/* Voicemail */}
+      <FormSection title="Script de voicemail" description="Mensagem deixada quando cai na caixa postal (se detecção de voicemail estiver desligada).">
+        <Textarea
+          rows={3}
+          value={r.voicemail ?? ""}
+          onChange={e => set({ voicemail: e.target.value })}
+          placeholder="Ex.: Olá {{nome}}, sou a Maria da V4 Company. Estou tentando falar com você sobre {{oferta}}. Me retorne quando puder. Obrigada!"
+        />
+      </FormSection>
+
+      {/* Encerramento */}
+      <FormSection title="Encerramento" description="Como o agente encerra a ligação, independente do resultado.">
+        <Textarea
+          rows={2}
+          value={r.encerramento ?? ""}
+          onChange={e => set({ encerramento: e.target.value })}
+          placeholder="Ex.: Muito obrigada pelo seu tempo, {{nome}}! Tenha um ótimo dia!"
+        />
+      </FormSection>
+    </div>
+  );
 }

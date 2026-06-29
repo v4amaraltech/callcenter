@@ -17,6 +17,9 @@ export function buildPromptForLead(lead, agentConfig = {}) {
   if (bg) ctxBlock += `\n\nInstruções de background do agente:\n${bg}`;
   ctxBlock += buildLeadContextPromptBlock(lead?.payload_extras);
 
+  // Bloco de roteiro estruturado (Fase 4)
+  const roteiroBlock = buildRoteiroBlock(agentConfig.roteiro, lead);
+
   if (template) {
     let t = template
       .replace(/\{\{nome\}\}/g, lead.nome ?? "cliente")
@@ -25,7 +28,7 @@ export function buildPromptForLead(lead, agentConfig = {}) {
       .replace(/\{\{origem\}\}/g, lead.origem ?? "não informada")
       .replace(/\{\{objetivo\}\}/g, lead.objetivo ?? "apresentar a empresa")
       .replace(/\{\{oferta\}\}/g, lead.oferta ?? "não especificado");
-    return `${t}${ctxBlock}`;
+    return `${t}${ctxBlock}${roteiroBlock}`;
   }
 
   const base = `Você é um agente de voz da ${empresa}.
@@ -56,5 +59,66 @@ Estilo:
 - Não pressione a pessoa.
 - Se a pessoa pedir para não ligar mais, classifique proxima_acao como "nao_contatar".`;
 
-  return ctxBlock ? `${ctxBlock.trim()}\n\n${base}` : base;
+  const full = ctxBlock ? `${ctxBlock.trim()}\n\n${base}` : base;
+  return roteiroBlock ? `${full}${roteiroBlock}` : full;
+}
+
+/**
+ * Converte o objeto `roteiro` do agente em um bloco de texto para o prompt.
+ * Segue as melhores práticas de mercado (Vapi, Bland, Retell):
+ * abertura → qualificação → apresentação → objeções → CTA → encerramento → voicemail
+ */
+function buildRoteiroBlock(roteiro, lead) {
+  if (!roteiro || typeof roteiro !== "object") return "";
+
+  const r = roteiro;
+  const nome = lead?.nome ?? "cliente";
+  const lines = ["\n\n═══ ROTEIRO ESTRUTURADO ═══"];
+
+  if (r.abertura) {
+    lines.push(`\n[ABERTURA] — Hook inicial (máx. 15 segundos de fala):\n${interpolate(r.abertura, lead)}`);
+  }
+
+  if (Array.isArray(r.qualificacao) && r.qualificacao.length) {
+    lines.push(`\n[QUALIFICAÇÃO] — Faça estas perguntas (escolha 1-2, não todas de uma vez):`);
+    r.qualificacao.forEach((q, i) => lines.push(`  ${i + 1}. ${q}`));
+  }
+
+  if (r.apresentacao) {
+    lines.push(`\n[APRESENTAÇÃO] — Adapte ao contexto do ${nome}:\n${interpolate(r.apresentacao, lead)}`);
+  }
+
+  if (Array.isArray(r.objecoes) && r.objecoes.length) {
+    lines.push(`\n[OBJEÇÕES] — Respostas para objeções comuns:`);
+    r.objecoes.forEach(({ objecao, resposta }) => {
+      if (objecao && resposta) {
+        lines.push(`  Se disser "${objecao}":\n    → ${resposta}`);
+      }
+    });
+  }
+
+  if (r.cta) {
+    lines.push(`\n[CTA] — Chamada para ação clara:\n${interpolate(r.cta, lead)}`);
+  }
+
+  if (r.encerramento) {
+    lines.push(`\n[ENCERRAMENTO]:\n${interpolate(r.encerramento, lead)}`);
+  }
+
+  if (r.voicemail) {
+    lines.push(`\n[VOICEMAIL] — Se cair na caixa postal:\n${interpolate(r.voicemail, lead)}`);
+  }
+
+  lines.push("\n═══════════════════════════");
+  return lines.join("\n");
+}
+
+function interpolate(text, lead) {
+  if (!text || !lead) return text ?? "";
+  return text
+    .replace(/\{\{nome\}\}/g, lead.nome ?? "cliente")
+    .replace(/\{\{empresa\}\}/g, lead.empresa ?? "não informada")
+    .replace(/\{\{cargo\}\}/g, lead.cargo ?? "não informado")
+    .replace(/\{\{oferta\}\}/g, lead.oferta ?? "não especificado")
+    .replace(/\{\{objetivo\}\}/g, lead.objetivo ?? "");
 }

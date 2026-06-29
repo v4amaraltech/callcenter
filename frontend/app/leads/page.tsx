@@ -350,8 +350,8 @@ export default function LeadsPage() {
       ) : null}
 
       {rows.length > 0 ? (
-        <div className="overflow-hidden rounded-lg bg-card card-elevated">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto overflow-hidden rounded-lg bg-card card-elevated">
+          <table className="w-full min-w-[800px] text-sm">
             <thead className="border-b border-border bg-muted/40">
               <tr>
                 <th className="w-12 px-4 py-3 text-left">

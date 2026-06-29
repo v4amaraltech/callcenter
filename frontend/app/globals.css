@@ -49,25 +49,25 @@
 
 /* ── Light mode ───────────────────────────────────────────────────────────── */
 :root {
-  --background: hsl(220 20% 96%);
-  --foreground: hsl(222 47% 10%);
+  --background: hsl(216 33% 97%);
+  --foreground: hsl(221 39% 11%);
   --card: hsl(0 0% 100%);
-  --card-foreground: hsl(222 47% 10%);
+  --card-foreground: hsl(221 39% 11%);
   --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(222 47% 10%);
-  --primary: hsl(4 90% 55%);
+  --popover-foreground: hsl(221 39% 11%);
+  --primary: hsl(4 90% 58%);
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(220 16% 92%);
+  --secondary: hsl(216 20% 94%);
   --secondary-foreground: hsl(222 30% 18%);
-  --muted: hsl(220 16% 93%);
-  --muted-foreground: hsl(220 10% 44%);
-  --accent: hsl(220 16% 91%);
+  --muted: hsl(216 20% 94%);
+  --muted-foreground: hsl(220 9% 46%);
+  --accent: hsl(216 20% 93%);
   --accent-foreground: hsl(222 30% 18%);
-  --destructive: hsl(0 84% 58%);
-  --border: hsl(220 20% 88%);
-  --input: hsl(220 20% 88%);
-  --ring: hsl(4 90% 55%);
-  --radius: 0.625rem;
+  --destructive: hsl(0 84% 60%);
+  --border: hsl(214 32% 91%);
+  --input: hsl(214 32% 91%);
+  --ring: hsl(4 90% 58%);
+  --radius: 0.5rem;
 
   /* Status semânticos */
   --success-bg: hsl(141 72% 92%);
@@ -105,23 +105,23 @@
 
 /* ── Dark mode ────────────────────────────────────────────────────────────── */
 .dark {
-  --background: hsl(222 28% 8%);
-  --foreground: hsl(0 0% 94%);
-  --card: hsl(222 25% 11%);
-  --card-foreground: hsl(0 0% 94%);
-  --popover: hsl(222 25% 12%);
-  --popover-foreground: hsl(0 0% 94%);
+  --background: hsl(0 0% 4%);
+  --foreground: hsl(0 0% 95%);
+  --card: hsl(0 0% 6%);
+  --card-foreground: hsl(0 0% 95%);
+  --popover: hsl(0 0% 7%);
+  --popover-foreground: hsl(0 0% 95%);
   --primary: hsl(4 90% 58%);
   --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(222 20% 16%);
-  --secondary-foreground: hsl(0 0% 94%);
-  --muted: hsl(222 20% 14%);
-  --muted-foreground: hsl(220 10% 58%);
-  --accent: hsl(222 20% 18%);
-  --accent-foreground: hsl(0 0% 94%);
-  --destructive: hsl(0 72% 46%);
-  --border: hsl(222 20% 20%);
-  --input: hsl(222 20% 20%);
+  --secondary: hsl(0 0% 10%);
+  --secondary-foreground: hsl(0 0% 95%);
+  --muted: hsl(0 0% 9%);
+  --muted-foreground: hsl(220 8% 60%);
+  --accent: hsl(0 0% 12%);
+  --accent-foreground: hsl(0 0% 95%);
+  --destructive: hsl(0 62% 34%);
+  --border: hsl(0 0% 14%);
+  --input: hsl(0 0% 14%);
   --ring: hsl(4 90% 58%);
 
   /* Status semânticos (dark) */
@@ -148,13 +148,13 @@
   --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.6);
 
   /* Sidebar */
-  --sidebar: hsl(222 35% 7%);
+  --sidebar: hsl(0 0% 4%);
   --sidebar-foreground: hsl(0 0% 90%);
   --sidebar-primary: hsl(4 90% 58%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(222 30% 14%);
+  --sidebar-accent: hsl(0 0% 9%);
   --sidebar-accent-foreground: hsl(0 0% 90%);
-  --sidebar-border: hsl(222 30% 16%);
+  --sidebar-border: hsl(0 0% 12%);
   --sidebar-ring: hsl(4 90% 58%);
 }
 

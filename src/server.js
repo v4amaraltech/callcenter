@@ -1,8 +1,8 @@
 import "dotenv/config";
 import "./ws-polyfill.js";
-import { randomUUID } from "crypto";
+import { randomUUID, createHash, randomBytes } from "crypto";
 import express from "express";
-import cors from "cors"; // 👈 Biblioteca importada aqui
+import cors from "cors";
 import { createServer } from "http";
 import { WebSocketServer } from "ws";
 import twilio from "twilio";
@@ -46,8 +46,15 @@ import { normalizeLeadContext } from "./util/leadContext.js";
 import { generateVoiceSamplePreview } from "./gemini/voicePreview.js";
 import { listCampaigns, getCampaignById, createCampaign, updateCampaign, deleteCampaign, getCampaignStats } from "./db/campaigns.js";
 import { getBotConfig, updateBotConfig } from "./db/botConfig.js";
-import { query, queryOne } from "./db/pg.js";
+import { query, queryOne, execute } from "./db/pg.js";
+import { apiAuthMiddleware } from "./middleware/auth.js";
 import { GoogleGenAI } from "@google/genai";
+import { analyzeCall } from "./gemini/analyzeCall.js";
+import { saveCallAnalysis, getCallAnalysisByResultId, getStatsQuality, getTopObjecoes } from "./db/callAnalysis.js";
+import {
+  createTaskFromCallResult, listTasks, getTasksByLeadId,
+  createTask, updateTask, deleteTask, getTasksStats,
+} from "./db/tasks.js";
 
 const PORT = process.env.PORT ?? 3000;
 
@@ -83,6 +90,7 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+app.use(apiAuthMiddleware);
 
 // ─── Twilio signature validation ────────────────────────────────────────────
 
@@ -770,6 +778,204 @@ app.get("/stats/by-agent", async (req, res) => {
   res.json(await getStatsByAgent({ from: req.query.from, to: req.query.to }));
 });
 
+// ─── Routes: Call Analysis ───────────────────────────────────────────────────
+
+app.get("/results/:id/analysis", async (req, res) => {
+  const analysis = await getCallAnalysisByResultId(req.params.id);
+  if (!analysis) return res.status(404).json({ error: "Análise ainda não disponível" });
+  res.json(analysis);
+});
+
+// ─── Routes: Tasks ───────────────────────────────────────────────────────────
+
+app.get("/tasks", async (req, res) => {
+  const { page, limit, status, tipo, lead_id } = req.query;
+  const result = await listTasks({ page: +page || 1, limit: +limit || 50, status, tipo, lead_id });
+  res.json(result);
+});
+
+app.post("/tasks", async (req, res) => {
+  const { tipo, titulo } = req.body;
+  if (!tipo || !titulo) return res.status(400).json({ error: "tipo e titulo são obrigatórios" });
+  const task = await createTask(req.body);
+  res.json(task);
+});
+
+app.patch("/tasks/:id", async (req, res) => {
+  try {
+    const task = await updateTask(req.params.id, req.body);
+    res.json(task);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+app.delete("/tasks/:id", async (req, res) => {
+  await deleteTask(req.params.id);
+  res.json({ ok: true });
+});
+
+app.get("/leads/:id/tasks", async (req, res) => {
+  const tasks = await getTasksByLeadId(req.params.id);
+  res.json(tasks);
+});
+
+// ─── Routes: Stats avançados ──────────────────────────────────────────────────
+
+app.get("/stats/quality", async (req, res) => {
+  const { agent_id, from, to } = req.query;
+  res.json(await getStatsQuality({ agent_id, from, to }));
+});
+
+app.get("/stats/objections", async (req, res) => {
+  const { agent_id, from, to, limit } = req.query;
+  res.json(await getTopObjecoes({ agent_id, from, to, limit: +limit || 10 }));
+});
+
+app.get("/stats/tasks", async (_req, res) => {
+  res.json(await getTasksStats());
+});
+
+app.get("/stats/funnel", async (req, res) => {
+  const { agent_id } = req.query;
+  const conditions = agent_id ? ["agent_id = $1"] : [];
+  const params = agent_id ? [agent_id] : [];
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const rows = await query(
+    `SELECT status, COUNT(*) AS total FROM leads ${where} GROUP BY status`,
+    params
+  );
+  const map = Object.fromEntries(rows.map(r => [r.status, parseInt(r.total)]));
+  const total = rows.reduce((s, r) => s + parseInt(r.total), 0);
+  res.json({
+    total,
+    novo:        map.novo         ?? 0,
+    contactado:  map.contactado   ?? 0,
+    convertido:  map.convertido   ?? 0,
+    nao_contatar: map.nao_contatar ?? 0,
+    arquivado:   map.arquivado    ?? 0,
+  });
+});
+
+// ─── Routes: Export ───────────────────────────────────────────────────────────
+
+function toCSV(rows, columns) {
+  const header = columns.join(",");
+  const lines = rows.map(r =>
+    columns.map(c => {
+      const v = r[c] ?? "";
+      const s = String(v).replace(/"/g, '""');
+      return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s}"` : s;
+    }).join(",")
+  );
+  return [header, ...lines].join("\n");
+}
+
+app.get("/export/leads", async (req, res) => {
+  const rows = await query(
+    `SELECT l.id, l.nome, l.empresa, l.cargo, l.telefone, l.origem, l.status,
+            l.tentativas, l.ultima_ligacao_em, l.criado_em,
+            a.nome AS agente
+     FROM leads l LEFT JOIN agents a ON a.id = l.agent_id
+     ORDER BY l.criado_em DESC`
+  );
+  const csv = toCSV(rows, ["id","nome","empresa","cargo","telefone","origem","status","tentativas","ultima_ligacao_em","criado_em","agente"]);
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", "attachment; filename=leads.csv");
+  res.send("﻿" + csv);
+});
+
+app.get("/export/results", async (req, res) => {
+  const { from, to, agent_id } = req.query;
+  const conditions = [];
+  const params = [];
+  if (agent_id) { params.push(agent_id); conditions.push(`cr.agent_id = $${params.length}`); }
+  if (from)     { params.push(from);     conditions.push(`cr.criado_em >= $${params.length}`); }
+  if (to)       { params.push(to);       conditions.push(`cr.criado_em <= $${params.length}`); }
+  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const rows = await query(
+    `SELECT cr.id, cr.call_sid, l.nome AS lead_nome, l.telefone, l.empresa,
+            a.nome AS agente, cr.interesse, cr.humor, cr.confirmado, cr.pessoa_correta,
+            cr.proxima_acao, cr.duracao_segundos, cr.palavras_total,
+            ca.qualidade_score, ca.temperatura, ca.satisfacao, ca.sentimento,
+            cr.resumo, cr.criado_em
+     FROM call_results cr
+     LEFT JOIN leads l ON l.id = cr.lead_id
+     LEFT JOIN agents a ON a.id = cr.agent_id
+     LEFT JOIN call_analysis ca ON ca.call_result_id = cr.id
+     ${where}
+     ORDER BY cr.criado_em DESC`,
+    params
+  );
+  const csv = toCSV(rows, [
+    "id","call_sid","lead_nome","telefone","empresa","agente",
+    "interesse","humor","confirmado","pessoa_correta","proxima_acao",
+    "duracao_segundos","palavras_total","qualidade_score","temperatura",
+    "satisfacao","sentimento","resumo","criado_em"
+  ]);
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", "attachment; filename=ligacoes.csv");
+  res.send("﻿" + csv);
+});
+
+// ─── Routes: API Keys ─────────────────────────────────────────────────────────
+
+app.get("/admin/api-keys", async (_req, res) => {
+  try {
+    const rows = await query(
+      `SELECT id, nome, key_prefix, ativo, permissoes, ultima_uso, criado_em, criado_por
+       FROM api_keys ORDER BY criado_em DESC`
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/admin/api-keys", async (req, res) => {
+  try {
+    const { nome } = req.body;
+    if (!nome) return res.status(400).json({ error: "nome é obrigatório" });
+
+    const rawKey = `v4_${randomBytes(32).toString("hex")}`;
+    const keyHash = createHash("sha256").update(rawKey).digest("hex");
+    const keyPrefix = rawKey.slice(0, 12) + "...";
+
+    const row = await queryOne(
+      `INSERT INTO api_keys (nome, key_hash, key_prefix, ativo, permissoes)
+       VALUES ($1, $2, $3, true, '{read,write}')
+       RETURNING id, nome, key_prefix, ativo, permissoes, criado_em`,
+      [nome, keyHash, keyPrefix]
+    );
+
+    res.json({ ...row, key: rawKey }); // key retornada apenas uma vez
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.patch("/admin/api-keys/:id", async (req, res) => {
+  try {
+    const { ativo } = req.body;
+    if (typeof ativo !== "boolean") return res.status(400).json({ error: "ativo (boolean) obrigatório" });
+    const row = await queryOne(
+      "UPDATE api_keys SET ativo = $1 WHERE id = $2 RETURNING id, nome, key_prefix, ativo, criado_em",
+      [ativo, req.params.id]
+    );
+    if (!row) return res.status(404).json({ error: "API key não encontrada" });
+    res.json(row);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/admin/api-keys/:id", async (req, res) => {
+  await execute("DELETE FROM api_keys WHERE id = $1", [req.params.id]);
+  res.json({ ok: true });
+});
+
 // ─── Routes: Admin (user approvals) ──────────────────────────────────────────
 
 app.get("/admin/users", async (_req, res) => {
@@ -932,8 +1138,9 @@ wss.on("connection", (twilioWs) => {
       for (const fc of geminiMsg.toolCall.functionCalls) {
         if (fc.name === "salvar_resultado_ligacao") {
           console.log("[FC] salvar_resultado_ligacao", fc.args);
+          let savedResult = null;
           try {
-            await saveCallResult({
+            savedResult = await saveCallResult({
               callSid,
               leadId,
               agentId: wsAgentId,
@@ -941,6 +1148,30 @@ wss.on("connection", (twilioWs) => {
             });
           } catch (err) {
             console.error("[FC] Erro ao salvar resultado", err);
+          }
+
+          // Análise pós-ligação em background (não bloqueia o fluxo)
+          if (savedResult?.id) {
+            const lead = leadId ? await getLeadById(leadId).catch(() => null) : null;
+            analyzeCall({
+              transcricao_agente: savedResult.transcricao_agente,
+              transcricao_usuario: savedResult.transcricao_usuario,
+              resumo: fc.args.resumo,
+              objetivo: lead?.objetivo,
+              oferta: lead?.oferta,
+            }).then(analysis => {
+              if (analysis) {
+                saveCallAnalysis(savedResult.id, analysis).catch(err =>
+                  console.error("[analyzeCall] Erro ao salvar análise:", err.message)
+                );
+              }
+            }).catch(err => console.error("[analyzeCall]", err.message));
+
+            // Auto-criar task com base na próxima ação
+            if (fc.args.proxima_acao && leadId) {
+              createTaskFromCallResult(savedResult.id, leadId, fc.args.proxima_acao)
+                .catch(err => console.error("[createTask]", err.message));
+            }
           }
 
           const webhookPayload = await buildFinalWebhookPayload({

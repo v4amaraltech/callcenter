@@ -24,6 +24,8 @@ async function proxy(req: NextRequest, pathSegments: string[] | undefined) {
     const v = req.headers.get(name);
     if (v) headers.set(name, v);
   }
+  const internalSecret = process.env.INTERNAL_API_SECRET;
+  if (internalSecret) headers.set("x-internal", internalSecret);
 
   let body: ArrayBuffer | undefined;
   if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {

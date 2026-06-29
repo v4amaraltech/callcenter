@@ -42,7 +42,7 @@ services:
       # Twilio
       TWILIO_ACCOUNT_SID:  ${TWILIO_ACCOUNT_SID}
       TWILIO_AUTH_TOKEN:   ${TWILIO_AUTH_TOKEN}
-      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-+551940402702}
 
       # Gemini
       GEMINI_API_KEY:  ${GEMINI_API_KEY}
@@ -52,6 +52,7 @@ services:
       # Extras
       EMPRESA_NOME:      ${EMPRESA_NOME:-Callcenter}
       N8N_WEBHOOK_URL:   ${N8N_WEBHOOK_URL:-}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
 
     deploy:
       replicas: 1
@@ -59,14 +60,22 @@ services:
         condition: on-failure
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.callcenter-api.rule=Host(`api-call.v4companyamaral.com`)"
-        - "traefik.http.routers.callcenter-api.entrypoints=websecure"
-        - "traefik.http.routers.callcenter-api.tls.certresolver=letsencryptresolver"
-        - "traefik.http.services.callcenter-api.loadbalancer.server.port=3001"
         - "traefik.http.routers.callcenter-api-http.rule=Host(`api-call.v4companyamaral.com`)"
         - "traefik.http.routers.callcenter-api-http.entrypoints=web"
         - "traefik.http.middlewares.callcenter-api-https.redirectscheme.scheme=https"
         - "traefik.http.routers.callcenter-api-http.middlewares=callcenter-api-https"
+        - "traefik.http.routers.callcenter-api.rule=Host(`api-call.v4companyamaral.com`)"
+        - "traefik.http.routers.callcenter-api.entrypoints=websecure"
+        - "traefik.http.routers.callcenter-api.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.callcenter-api.service=callcenter-api"
+        - "traefik.http.routers.callcenter-ws.rule=Host(`api-call.v4companyamaral.com`) && PathPrefix(`/media`)"
+        - "traefik.http.routers.callcenter-ws.entrypoints=websecure"
+        - "traefik.http.routers.callcenter-ws.tls.certresolver=letsencryptresolver"
+        - "traefik.http.routers.callcenter-ws.service=callcenter-api"
+        - "traefik.http.routers.callcenter-ws.priority=100"
+        - "traefik.http.services.callcenter-api.loadbalancer.server.port=3001"
+        - "traefik.http.services.callcenter-api.loadbalancer.server.scheme=http"
+        - "traefik.http.services.callcenter-api.loadbalancer.passHostHeader=true"
       resources:
         limits:
           memory: 512M
@@ -95,6 +104,7 @@ services:
       # URL do backend (proxy interno)
       BACKEND_PROXY_TARGET: http://backend:3001
       NEXT_PUBLIC_API_BASE: ""
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
 
     deploy:
       replicas: 1

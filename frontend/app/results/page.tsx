@@ -119,9 +119,9 @@ export default function ResultsPage() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
-        className="overflow-hidden rounded-lg bg-card card-elevated"
+        className="overflow-x-auto overflow-hidden rounded-lg bg-card card-elevated"
       >
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[900px] text-sm">
           <thead className="border-b border-border bg-muted/40">
             <tr>
               {["Lead", "Telefone", "Agente", "Interesse", "Humor", "Próxima ação", "Resumo", "Data/Hora", ""].map((h) => (

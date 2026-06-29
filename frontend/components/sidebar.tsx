@@ -8,7 +8,9 @@ import type { ReactNode } from "react";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
 import {
+  BarChart3,
   Bot,
+  CheckSquare,
   LayoutDashboard,
   LogOut,
   Megaphone,
@@ -75,6 +77,7 @@ const baseGroups: NavGroup[] = [
     label: "PRINCIPAL",
     links: [
       { href: "/", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/analytics", label: "Analytics", icon: BarChart3 },
       { href: "/campaigns", label: "Campanhas", icon: Megaphone },
     ],
   },
@@ -84,6 +87,7 @@ const baseGroups: NavGroup[] = [
       { href: "/agents", label: "Agentes", icon: Bot },
       { href: "/leads", label: "Leads", icon: Users },
       { href: "/results", label: "Ligações", icon: PhoneCall },
+      { href: "/tasks", label: "Tarefas", icon: CheckSquare },
     ],
   },
   {

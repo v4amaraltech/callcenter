@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { resultsApi, leadsApi } from "@/lib/api";
+import { resultsApi, leadsApi, analysisApi } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +24,14 @@ import {
   Target,
   AlertCircle,
   ChevronRight,
+  Flame,
+  ThumbsUp,
+  ThumbsDown,
+  Star,
+  BarChart2,
+  ShieldAlert,
+  Lightbulb,
+  Tag,
 } from "lucide-react";
 
 type Bubble = { role: "user" | "agent"; texto: string; ts: string; ts_end?: string };
@@ -72,6 +80,222 @@ const PROXIMA_ICONS: Record<string, React.ElementType> = {
   revisar_manualmente: AlertCircle,
 };
 
+// ── Helpers de análise ────────────────────────────────────────────────────────
+
+const TEMP_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
+  quente:  { label: "Quente",  color: "text-red-600 bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800",    icon: Flame },
+  morno:   { label: "Morno",   color: "text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800", icon: Flame },
+  frio:    { label: "Frio",    color: "text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800",  icon: Flame },
+  gelado:  { label: "Gelado",  color: "text-slate-500 bg-muted border-border",   icon: Flame },
+};
+
+const SENT_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
+  positivo: { label: "Positivo", icon: ThumbsUp,   color: "text-emerald-600" },
+  neutro:   { label: "Neutro",   icon: ThumbsUp,   color: "text-amber-500" },
+  negativo: { label: "Negativo", icon: ThumbsDown, color: "text-red-500" },
+};
+
+function ScoreBar({ score, max = 10 }: { score: number | null; max?: number }) {
+  if (score == null) return <span className="text-muted-foreground text-sm">—</span>;
+  const pct = (score / max) * 100;
+  const color = pct >= 70 ? "bg-emerald-500" : pct >= 40 ? "bg-amber-500" : "bg-red-500";
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-lg font-bold tabular-nums">{score}</span>
+      <span className="text-xs text-muted-foreground">/{max}</span>
+      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+        <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function StarRating({ value }: { value: number | null }) {
+  if (value == null) return <span className="text-muted-foreground text-sm">—</span>;
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star key={i} className={`h-4 w-4 ${i <= value ? "text-amber-400 fill-amber-400" : "text-muted"}`} />
+      ))}
+    </div>
+  );
+}
+
+import type { CallAnalysis } from "@/lib/api";
+
+function AnalysisPanel({ analysis, loading }: { analysis?: CallAnalysis; loading: boolean }) {
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <BarChart2 className="h-4 w-4 text-primary" />
+            Análise Automática pela IA
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-pulse">
+            {[1,2,3,4].map(i => <div key={i} className="h-16 rounded-lg bg-muted" />)}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!analysis) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="py-6 text-center text-sm text-muted-foreground">
+          <BarChart2 className="h-6 w-6 mx-auto mb-2 opacity-40" />
+          Análise IA ainda sendo processada. Disponível em instantes após a ligação.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const tempCfg = analysis.temperatura ? TEMP_CONFIG[analysis.temperatura] : null;
+  const TempIcon = tempCfg?.icon ?? Flame;
+  const sentCfg = analysis.sentimento ? SENT_CONFIG[analysis.sentimento] : null;
+  const SentIcon = sentCfg?.icon ?? ThumbsUp;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+          <BarChart2 className="h-4 w-4 text-primary" />
+          Análise Automática pela IA
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {/* Métricas principais */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="space-y-1.5">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Qualidade</p>
+            <ScoreBar score={analysis.qualidade_score} />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Aderência ao Roteiro</p>
+            <ScoreBar score={analysis.aderencia_roteiro} />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Temperatura</p>
+            {tempCfg ? (
+              <span className={`inline-flex items-center gap-1.5 text-sm font-semibold px-2.5 py-1 rounded-full border ${tempCfg.color}`}>
+                <TempIcon className="h-3.5 w-3.5" />
+                {tempCfg.label}
+              </span>
+            ) : <span className="text-muted-foreground text-sm">—</span>}
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Satisfação estimada</p>
+            <StarRating value={analysis.satisfacao} />
+          </div>
+        </div>
+
+        {/* Sentimento + resumo executivo */}
+        <div className="grid md:grid-cols-2 gap-4">
+          {sentCfg && (
+            <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 space-y-1">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Sentimento do cliente</p>
+              <p className={`flex items-center gap-2 font-semibold ${sentCfg.color}`}>
+                <SentIcon className="h-4 w-4" />
+                {sentCfg.label}
+                {analysis.confianca_sentimento != null && (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    ({Math.round(analysis.confianca_sentimento * 100)}% confiança)
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
+          {analysis.resumo_executivo && (
+            <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 space-y-1">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">Resumo executivo</p>
+              <p className="text-sm text-foreground leading-relaxed">{analysis.resumo_executivo}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Sinais de compra + objeções */}
+        <div className="grid md:grid-cols-2 gap-4">
+          {analysis.sinais_compra.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wide flex items-center gap-1.5">
+                <ThumbsUp className="h-3.5 w-3.5" /> Sinais de compra
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {analysis.sinais_compra.map((s, i) => (
+                  <span key={i} className="rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-xs px-2.5 py-1">
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {analysis.objecoes.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold text-red-600 uppercase tracking-wide flex items-center gap-1.5">
+                <ShieldAlert className="h-3.5 w-3.5" /> Objeções detectadas
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {analysis.objecoes.map((o, i) => (
+                  <span key={i} className="rounded-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-xs px-2.5 py-1">
+                    {o}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Tópicos + pontos fortes + pontos de melhoria */}
+        <div className="grid md:grid-cols-3 gap-4">
+          {analysis.topicos.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+                <Tag className="h-3.5 w-3.5" /> Tópicos abordados
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {analysis.topicos.map((t, i) => (
+                  <span key={i} className="rounded-full bg-muted border border-border text-muted-foreground text-xs px-2.5 py-1">{t}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {analysis.pontos_fortes.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wide flex items-center gap-1.5">
+                <Lightbulb className="h-3.5 w-3.5" /> Pontos fortes
+              </p>
+              <ul className="space-y-1">
+                {analysis.pontos_fortes.map((p, i) => (
+                  <li key={i} className="text-xs text-foreground flex gap-1.5">
+                    <span className="text-emerald-500 mt-0.5">✓</span> {p}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {analysis.pontos_melhoria.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold text-amber-600 uppercase tracking-wide flex items-center gap-1.5">
+                <Target className="h-3.5 w-3.5" /> Pontos de melhoria
+              </p>
+              <ul className="space-y-1">
+                {analysis.pontos_melhoria.map((p, i) => (
+                  <li key={i} className="text-xs text-foreground flex gap-1.5">
+                    <span className="text-amber-500 mt-0.5">→</span> {p}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function CallDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -92,6 +316,13 @@ export default function CallDetailPage() {
     queryKey: ["lead-detail", result?.lead_id],
     queryFn: () => leadsApi.get(result!.lead_id),
     enabled: !!result?.lead_id,
+  });
+
+  const { data: analysis, isLoading: loadingAnalysis } = useQuery({
+    queryKey: ["call-analysis", id],
+    queryFn: () => analysisApi.get(id),
+    enabled: !!id,
+    retry: false,
   });
 
   if (loadingResult) {
@@ -250,6 +481,11 @@ export default function CallDetailPage() {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Análise IA — full-width acima das colunas */}
+        <div className="lg:col-span-3">
+          <AnalysisPanel analysis={analysis} loading={loadingAnalysis} />
         </div>
 
         {/* Coluna esquerda */}

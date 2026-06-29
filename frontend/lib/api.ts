@@ -339,4 +339,127 @@ export const adminApi = {
   listUsers: () => req<UserApproval[]>("/admin/users"),
   patchUser: (userId: string, fields: Partial<Pick<UserApproval, "approved" | "admin">>) =>
     req<UserApproval>(`/admin/users/${userId}`, { method: "PATCH", body: JSON.stringify(fields) }),
+  listApiKeys: () => req<ApiKey[]>("/admin/api-keys"),
+  createApiKey: (nome: string) => req<ApiKey & { key: string }>("/admin/api-keys", { method: "POST", body: JSON.stringify({ nome }) }),
+  toggleApiKey: (id: string, ativo: boolean) =>
+    req<ApiKey>(`/admin/api-keys/${id}`, { method: "PATCH", body: JSON.stringify({ ativo }) }),
+  deleteApiKey: (id: string) => req(`/admin/api-keys/${id}`, { method: "DELETE" }),
+};
+
+// ── Analysis ─────────────────────────────────────────────────────────────────
+
+export const analysisApi = {
+  get: (resultId: string | number) => req<CallAnalysis>(`/results/${resultId}/analysis`),
+};
+
+// ── Tasks ─────────────────────────────────────────────────────────────────────
+
+export const tasksApi = {
+  list: (params?: Record<string, string>) => {
+    const qs = params ? "?" + new URLSearchParams(params).toString() : "";
+    return req<{ data: Task[]; count: number }>(`/tasks${qs}`);
+  },
+  create: (body: Partial<Task>) => req<Task>("/tasks", { method: "POST", body: JSON.stringify(body) }),
+  update: (id: string, body: Partial<Task>) => req<Task>(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  delete: (id: string) => req(`/tasks/${id}`, { method: "DELETE" }),
+  byLead: (leadId: string) => req<Task[]>(`/leads/${leadId}/tasks`),
+  stats: () => req<TasksStats>("/stats/tasks"),
+};
+
+// ── Export ────────────────────────────────────────────────────────────────────
+
+export function exportUrl(path: string, params?: Record<string, string>) {
+  const base = apiBaseUrl();
+  const qs = params ? "?" + new URLSearchParams(params).toString() : "";
+  if (base.startsWith("http")) return `${base}${path}${qs}`;
+  return `${typeof window !== "undefined" ? window.location.origin : ""}${base}${path}${qs}`;
+}
+
+// ── Advanced Stats ────────────────────────────────────────────────────────────
+
+export const advancedStatsApi = {
+  quality: (params?: { agent_id?: string; from?: string; to?: string }) => {
+    const qs = params ? "?" + new URLSearchParams(params as Record<string, string>).toString() : "";
+    return req<QualityStats>(`/stats/quality${qs}`);
+  },
+  objections: (params?: { agent_id?: string; from?: string; to?: string; limit?: string }) => {
+    const qs = params ? "?" + new URLSearchParams(params as Record<string, string>).toString() : "";
+    return req<ObjectionRow[]>(`/stats/objections${qs}`);
+  },
+  funnel: (params?: { agent_id?: string }) => {
+    const qs = params?.agent_id ? `?agent_id=${encodeURIComponent(params.agent_id)}` : "";
+    return req<FunnelStats>(`/stats/funnel${qs}`);
+  },
+  tasks: () => req<TasksStats>("/stats/tasks"),
+};
+
+// ── New Types ─────────────────────────────────────────────────────────────────
+
+export type CallAnalysis = {
+  id: number;
+  call_result_id: number;
+  qualidade_score: number | null;
+  temperatura: "quente" | "morno" | "frio" | "gelado" | null;
+  satisfacao: number | null;
+  sentimento: "positivo" | "neutro" | "negativo" | null;
+  confianca_sentimento: number | null;
+  sinais_compra: string[];
+  objecoes: string[];
+  topicos: string[];
+  momentos_chave: { momento: string; tipo: string; texto: string }[];
+  aderencia_roteiro: number | null;
+  pontos_fortes: string[];
+  pontos_melhoria: string[];
+  resumo_executivo: string | null;
+  criado_em: string;
+};
+
+export type Task = {
+  id: string;
+  lead_id: string | null;
+  call_result_id: number | null;
+  tipo: "whatsapp" | "email" | "reuniao" | "ligar_novamente" | "revisar";
+  titulo: string;
+  descricao?: string | null;
+  prazo?: string | null;
+  status: "pendente" | "em_andamento" | "concluido" | "cancelado";
+  criado_em: string;
+  concluido_em?: string | null;
+  lead?: { nome: string; empresa?: string; telefone?: string } | null;
+};
+
+export type ApiKey = {
+  id: string;
+  nome: string;
+  key_prefix: string;
+  ativo: boolean;
+  permissoes: string[];
+  ultima_uso: string | null;
+  criado_em: string;
+};
+
+export type TasksStats = {
+  pendente: number;
+  em_andamento: number;
+  concluido: number;
+  cancelado: number;
+  total: number;
+};
+
+export type QualityStats = {
+  qualidade_media: string | null;
+  aderencia_media: string | null;
+  total_analisados: string;
+  distribuicao_temperatura: { temperatura: string; total: string }[];
+};
+
+export type ObjectionRow = { objecao: string; frequencia: string };
+
+export type FunnelStats = {
+  total: number;
+  novo: number;
+  contactado: number;
+  convertido: number;
+  nao_contatar: number;
+  arquivado: number;
 };
