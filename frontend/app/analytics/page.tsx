@@ -104,7 +104,7 @@ export default function AnalyticsPage() {
           description="Métricas avançadas de ligações, qualidade e conversão"
         />
         <div className="flex flex-wrap gap-2 shrink-0">
-          <Select value={period} onValueChange={setPeriod}>
+          <Select value={period} onValueChange={v => { if (v) setPeriod(v); }}>
             <SelectTrigger className="w-44">
               <SelectValue />
             </SelectTrigger>
@@ -112,7 +112,7 @@ export default function AnalyticsPage() {
               {PERIOD_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={agentFilter || "_all"} onValueChange={v => setAgentFilter(v === "_all" ? "" : v)}>
+          <Select value={agentFilter || "_all"} onValueChange={v => setAgentFilter(v && v !== "_all" ? v : "")}>
             <SelectTrigger className="w-44">
               <SelectValue placeholder="Todos os agentes" />
             </SelectTrigger>
@@ -189,7 +189,7 @@ export default function AnalyticsPage() {
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
-                  <Pie data={tempData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} label={({ name, percent }: { name: string; percent: number }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                  <Pie data={tempData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} label={({ name, percent }) => `${name ?? ""} ${((percent ?? 0) * 100).toFixed(0)}%`} labelLine={false}>
                     {tempData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
                   </Pie>
                   <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />

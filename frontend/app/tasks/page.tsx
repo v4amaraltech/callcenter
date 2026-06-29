@@ -111,7 +111,7 @@ export default function TasksPage() {
 
       {/* Filtros */}
       <div className="flex flex-wrap gap-3">
-        <Select value={statusFilter || "_all"} onValueChange={v => setStatusFilter(v === "_all" ? "" : v)}>
+        <Select value={statusFilter || "_all"} onValueChange={v => setStatusFilter(v && v !== "_all" ? v : "")}>
           <SelectTrigger className="w-44">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -124,7 +124,7 @@ export default function TasksPage() {
           </SelectContent>
         </Select>
 
-        <Select value={tipoFilter || "_all"} onValueChange={v => setTipoFilter(v === "_all" ? "" : v)}>
+        <Select value={tipoFilter || "_all"} onValueChange={v => setTipoFilter(v && v !== "_all" ? v : "")}>
           <SelectTrigger className="w-44">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
